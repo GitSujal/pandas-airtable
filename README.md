@@ -31,6 +31,19 @@ uv add pandas-airtable
 pip install pandas-airtable
 ```
 
+> **Note:** This package does not install pandas as a dependency to keep the package slim. It assumes you already have pandas installed in your environment. If you don't have pandas installed, install it separately:
+> ```bash
+> pip install pandas
+> # or
+> uv add pandas
+> ```
+> Alternatively, you can install pandas as an optional dependency:
+> ```bash
+> pip install pandas-airtable[pandas]
+> # or
+> uv add pandas-airtable[pandas]
+> ```
+
 ## Configuration
 
 ### Getting Your Airtable Credentials
@@ -604,9 +617,9 @@ uv run pytest tests/ -v
 
 ## Requirements
 
-- Python >= 3.13
-- pandas >= 2.3.3
+- Python >= 3.12
 - pyairtable >= 3.3.0
+- pandas >= 2.3.3 (peer dependency - must be installed separately or via `pandas-airtable[pandas]`)
 
 ## License
 
