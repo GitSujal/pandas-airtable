@@ -390,10 +390,12 @@ class TestReadErrorHandling:
         test_table: tuple[str, str],
     ):
         """Test error with invalid Airtable formula."""
+        import requests
+
         table_name, _ = test_table
 
-        # Invalid formula should raise an error from pyairtable
-        with pytest.raises((ValueError, RuntimeError, KeyError)):
+        # Invalid formula should raise an error from pyairtable (HTTPError)
+        with pytest.raises((ValueError, RuntimeError, KeyError, requests.exceptions.HTTPError)):
             read_airtable(
                 base_id,
                 table_name,

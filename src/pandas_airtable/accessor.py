@@ -31,6 +31,7 @@ from pandas_airtable.types import (
     IfExistsMode,
     WriteResult,
 )
+from pandas_airtable.utils import get_base_id_from_name
 
 if TYPE_CHECKING:
     from pyairtable import Table
@@ -66,9 +67,9 @@ class AirtableAccessor:
 
     def to_airtable(
         self,
-        base_id: str,
-        table_name: str,
-        api_key: str,
+        base_id: str | None = None,
+        table_name: str | None = None,
+        api_key: str | None = None,
         if_exists: IfExistsMode = "append",
         key_field: str | None = None,
         schema: dict[str, dict[str, Any]] | None = None,
@@ -77,11 +78,13 @@ class AirtableAccessor:
         allow_new_columns: bool = False,
         allow_duplicate_keys: bool = False,
         dry_run: bool = False,
+        base_name: str | None = None,
     ) -> WriteResult | DryRunResult:
         """Write DataFrame to an Airtable table.
 
         Args:
             base_id: The Airtable base ID (e.g., "appXXXXXXXXXXXXXX").
+                Either base_id or base_name must be provided.
             table_name: The name of the table to write to.
             api_key: Airtable API key or personal access token.
             if_exists: How to handle existing data:
@@ -97,6 +100,10 @@ class AirtableAccessor:
             allow_duplicate_keys: If True, allow duplicate key values in upsert mode,
                 using the last occurrence (default False).
             dry_run: If True, return preview without making changes (default False).
+            base_name: The name of the Airtable base. If provided, the base_id
+                will be looked up automatically. Note: If there are multiple bases
+                with the same name, only the first one will be used. In such cases,
+                use base_id instead of base_name to avoid ambiguity.
 
         Returns:
             WriteResult with created/updated/deleted counts and any errors,
@@ -108,8 +115,23 @@ class AirtableAccessor:
             AirtableTableNotFoundError: If table doesn't exist and create_table=False.
             AirtableSchemaError: If schema mismatch and allow_new_columns=False.
             AirtableDuplicateKeyError: If duplicate keys in upsert mode.
+            ValueError: If base_name is provided but no matching base is found.
         """
         df = self._obj.copy()
+
+        # Handle base_id/base_name lookup
+        if not base_id and not base_name:
+            raise AirtableValidationError("Either base_id or base_name is required")
+        if base_id and base_name:
+            raise AirtableValidationError("Provide either base_id or base_name, not both")
+
+        # Look up base_id from base_name if needed
+        if base_name:
+            if not api_key:
+                raise AirtableAuthenticationError(
+                    "API key is required. Provide an Airtable API key or personal access token."
+                )
+            base_id = get_base_id_from_name(api_key, base_name)
 
         # Step 1: Validate inputs
         _validate_write_inputs(
@@ -270,13 +292,18 @@ def _ensure_table_exists(
 
         # Attempt to create table
         try:
-            fields = [
-                {
+            fields = []
+            for name, spec in schema.items():
+                field_def: dict[str, Any] = {
                     "name": name,
                     "type": spec.get("type", "singleLineText"),
                 }
-                for name, spec in schema.items()
-            ]
+                # Include options for field types that require them
+                options = _get_field_options(field_def["type"], spec.get("options"))
+                if options:
+                    field_def["options"] = options
+                fields.append(field_def)
+
             # Ensure at least one field for table creation
             if not fields:
                 fields = [{"name": "Name", "type": "singleLineText"}]
@@ -342,13 +369,17 @@ def _sync_schema(
 
         # Create missing fields if allowed
         if comparison.fields_to_create and allow_new_columns:
-            # Get the Table object to use create_field method
-            table = api.table(base_id, table_name)
+            # Get the Table object using table ID (required for meta API)
+            table_id = table_schema.id
+            table = api.table(base_id, table_id)
             for field_def in comparison.fields_to_create:
                 try:
+                    # Get options for the field type
+                    options = _get_field_options(field_def["type"], field_def.get("options"))
                     table.create_field(
                         name=field_def["name"],
                         field_type=field_def["type"],
+                        options=options if options else None,
                     )
                 except Exception as e:
                     raise AirtableFieldCreationError(field_def["name"], e) from e
@@ -360,6 +391,42 @@ def _sync_schema(
     except Exception as e:
         # If we can't get schema (e.g., API limitations), log and skip validation
         logger.debug(f"Could not sync schema (API may not support metadata): {e}")
+
+
+def _get_field_options(
+    field_type: str, existing_options: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Get required options for a field type.
+
+    Airtable API requires certain options for specific field types.
+
+    Args:
+        field_type: The Airtable field type.
+        existing_options: Existing options from schema (if any).
+
+    Returns:
+        Dict of options to include in field definition.
+    """
+    options: dict[str, Any] = existing_options.copy() if existing_options else {}
+
+    # Number fields require precision
+    if field_type == "number" and "precision" not in options:
+        options["precision"] = 0  # Default to integer precision
+
+    # Date fields require dateFormat option
+    if field_type == "date" and "dateFormat" not in options:
+        options["dateFormat"] = {"name": "iso"}
+
+    # Checkbox fields require icon and color options
+    if field_type == "checkbox":
+        if "icon" not in options:
+            options["icon"] = "check"
+        if "color" not in options:
+            options["color"] = "greenBright"
+
+    # Single/Multi select need options.choices but we can't know them ahead of time
+
+    return options
 
 
 def _execute_replace(

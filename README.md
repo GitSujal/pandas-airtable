@@ -45,10 +45,11 @@ pip install pandas-airtable
      - `schema.bases:write` - For creating tables/fields
    - Copy the token (starts with `pat...`)
 
-2. **Base ID**:
-   - Open your Airtable base
-   - The Base ID is in the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...`
-   - It starts with `app` followed by alphanumeric characters
+2. **Base ID or Base Name**:
+   - **Base ID** (recommended): Open your Airtable base - the Base ID is in the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...` (starts with `app`)
+   - **Base Name**: Alternatively, you can use the human-readable base name (e.g., "My Project"). The package will look up the Base ID automatically.
+
+   > **Note:** If you have multiple bases with the same name, the package will use the first one found. In such cases, use `base_id` instead for clarity.
 
 ### Environment Variables (Recommended)
 
@@ -57,7 +58,11 @@ Store your credentials in environment variables for security:
 ```bash
 # Add to your .env file or shell profile
 export AIRTABLE_API_KEY="patXXXXXXXXXXXXXX"
+
+# Use either base_id OR base_name (not both)
 export AIRTABLE_BASE_ID="appXXXXXXXXXXXXXX"
+# OR
+export AIRTABLE_BASE_NAME="My Project"
 ```
 
 Then use them in your code:
@@ -68,9 +73,14 @@ import pandas as pd
 import pandas_airtable
 
 api_key = os.environ["AIRTABLE_API_KEY"]
-base_id = os.environ["AIRTABLE_BASE_ID"]
 
+# Using base_id
+base_id = os.environ["AIRTABLE_BASE_ID"]
 df = pd.read_airtable(base_id, "MyTable", api_key=api_key)
+
+# OR using base_name
+base_name = os.environ["AIRTABLE_BASE_NAME"]
+df = pd.read_airtable(base_name=base_name, table_name="MyTable", api_key=api_key)
 ```
 
 ## Quick Start
@@ -79,9 +89,16 @@ df = pd.read_airtable(base_id, "MyTable", api_key=api_key)
 import pandas as pd
 import pandas_airtable  # Registers the accessor and pd.read_airtable
 
-# Read from Airtable
+# Read from Airtable (using base_id)
 df = pd.read_airtable(
     base_id="appXXXXXXXXXXXXXX",
+    table_name="Contacts",
+    api_key="patXXXXXXXXXXXXXX"
+)
+
+# OR read using base_name (human-readable name)
+df = pd.read_airtable(
+    base_name="My Project",
     table_name="Contacts",
     api_key="patXXXXXXXXXXXXXX"
 )
@@ -90,7 +107,7 @@ df = pd.read_airtable(
 print(df.head())
 print(df.describe())
 
-# Write back to Airtable
+# Write back to Airtable (works with both base_id and base_name)
 df.airtable.to_airtable(
     base_id="appXXXXXXXXXXXXXX",
     table_name="Contacts",
@@ -511,14 +528,17 @@ INFO:pandas_airtable:Creating batch 3/5 with 10 records
 
 ```python
 pd.read_airtable(
-    base_id: str,           # Airtable base ID (e.g., "appXXX")
+    base_id: str = None,    # Airtable base ID (e.g., "appXXX")
     table_name: str,        # Table name
     api_key: str,           # Personal access token (e.g., "patXXX")
     view: str = None,       # Optional: filter by view name
     formula: str = None,    # Optional: filter by Airtable formula
     page_size: int = 100,   # Records per API page (max 100)
+    base_name: str = None,  # Alternative to base_id: use human-readable base name
 ) -> pd.DataFrame
 ```
+
+> **Note:** Provide either `base_id` or `base_name`, not both. If multiple bases share the same name, the first one found will be used.
 
 **Returns:** DataFrame with all records and metadata columns (`_airtable_id`, `_airtable_created_time`)
 
@@ -526,7 +546,7 @@ pd.read_airtable(
 
 ```python
 df.airtable.to_airtable(
-    base_id: str,                              # Airtable base ID
+    base_id: str = None,                       # Airtable base ID
     table_name: str,                           # Table name
     api_key: str,                              # Personal access token
     if_exists: str = "append",                 # "append", "replace", or "upsert"
@@ -537,8 +557,11 @@ df.airtable.to_airtable(
     allow_new_columns: bool = False,           # Create missing fields in Airtable
     allow_duplicate_keys: bool = False,        # Allow duplicate keys in upsert
     dry_run: bool = False,                     # Preview without making changes
+    base_name: str = None,                     # Alternative to base_id: use human-readable base name
 ) -> WriteResult | DryRunResult
 ```
+
+> **Note:** Provide either `base_id` or `base_name`, not both. If multiple bases share the same name, the first one found will be used.
 
 **Returns:**
 - `WriteResult` - Contains `created_count`, `updated_count`, `deleted_count`, `created_ids`, `updated_ids`, `errors`, `success`
@@ -561,7 +584,11 @@ Run against the real Airtable API:
 ```bash
 # Set credentials
 export AIRTABLE_API_KEY="patXXXXXXXXXXXXXX"
+
+# Use either base_id OR base_name
 export AIRTABLE_BASE_ID="appXXXXXXXXXXXXXX"
+# OR
+export AIRTABLE_BASE_NAME="My Test Base"
 
 # Run integration tests
 uv run pytest tests/integration/ -v

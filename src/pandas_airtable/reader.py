@@ -19,15 +19,17 @@ from pandas_airtable.types import (
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
 )
+from pandas_airtable.utils import get_base_id_from_name
 
 
 def read_airtable(
-    base_id: str,
-    table_name: str,
-    api_key: str,
+    base_id: str | None = None,
+    table_name: str | None = None,
+    api_key: str | None = None,
     view: str | None = None,
     formula: str | None = None,
     page_size: int = DEFAULT_PAGE_SIZE,
+    base_name: str | None = None,
 ) -> pd.DataFrame:
     """Read an Airtable table into a pandas DataFrame.
 
@@ -37,11 +39,16 @@ def read_airtable(
 
     Args:
         base_id: The Airtable base ID (e.g., "appXXXXXXXXXXXXXX").
+            Either base_id or base_name must be provided.
         table_name: The name of the table to read.
         api_key: Airtable API key or personal access token.
         view: Optional view name to filter records.
         formula: Optional Airtable formula to filter records.
         page_size: Number of records per API request (default 100, max 100).
+        base_name: The name of the Airtable base. If provided, the base_id
+            will be looked up automatically. Note: If there are multiple bases
+            with the same name, only the first one will be used. In such cases,
+            use base_id instead of base_name to avoid ambiguity.
 
     Returns:
         DataFrame containing all records with columns:
@@ -53,11 +60,15 @@ def read_airtable(
         AirtableAuthenticationError: If the API key is invalid.
         AirtableValidationError: If required parameters are missing.
         AirtableTableNotFoundError: If the table does not exist.
+        ValueError: If base_name is provided but no matching base is found.
 
     Examples:
         >>> import pandas as pd
         >>> import pandas_airtable  # Registers accessor and read_airtable
+        >>> # Using base_id
         >>> df = pd.read_airtable("appXXX", "Contacts", api_key="patXXX")
+        >>> # Using base_name
+        >>> df = pd.read_airtable(base_name="My Base", table_name="Contacts", api_key="patXXX")
         >>> df.head()
     """
     # Validate inputs
@@ -65,8 +76,17 @@ def read_airtable(
         raise AirtableAuthenticationError(
             "API key is required. Provide an Airtable API key or personal access token."
         )
-    if not base_id:
-        raise AirtableValidationError("base_id is required")
+
+    # Handle base_id/base_name
+    if not base_id and not base_name:
+        raise AirtableValidationError("Either base_id or base_name is required")
+    if base_id and base_name:
+        raise AirtableValidationError("Provide either base_id or base_name, not both")
+
+    # Look up base_id from base_name if needed
+    if base_name:
+        base_id = get_base_id_from_name(api_key, base_name)
+
     if not table_name:
         raise AirtableValidationError("table_name is required")
 

@@ -3,6 +3,10 @@
 These tests run against the real Airtable API and require:
 - AIRTABLE_API_KEY: Valid API key or personal access token
 - AIRTABLE_BASE_ID: Base ID to use for testing (will create/delete tables)
+  OR
+- AIRTABLE_BASE_NAME: Base name to look up the base ID automatically
+  (Note: If there are multiple bases with the same name, only the first one
+  will be used. In such cases, use AIRTABLE_BASE_ID instead for clarity.)
 
 Tests are skipped if these environment variables are not set.
 """
@@ -20,6 +24,8 @@ import pytest
 from dotenv import load_dotenv
 from pyairtable import Api
 
+from pandas_airtable.utils import get_base_id_from_name
+
 # Load .env file if it exists
 env_path = Path(__file__).parent.parent.parent / ".env"
 if env_path.exists():
@@ -27,12 +33,29 @@ if env_path.exists():
 
 
 def get_airtable_credentials() -> tuple[str, str] | None:
-    """Get Airtable credentials from environment variables."""
+    """Get Airtable credentials from environment variables.
+
+    Returns tuple of (api_key, base_id) if credentials are available.
+    If AIRTABLE_BASE_NAME is provided instead of AIRTABLE_BASE_ID,
+    the base_id will be looked up automatically.
+    """
     api_key = os.environ.get("AIRTABLE_API_KEY")
     base_id = os.environ.get("AIRTABLE_BASE_ID")
+    base_name = os.environ.get("AIRTABLE_BASE_NAME")
 
-    if not api_key or not base_id:
+    if not api_key:
         return None
+
+    if not base_id and not base_name:
+        return None
+
+    # If base_name is provided, look up the base_id
+    if base_name and not base_id:
+        try:
+            base_id = get_base_id_from_name(api_key, base_name)
+        except ValueError as e:
+            print(f"Warning: Could not find base with name '{base_name}': {e}")
+            return None
 
     return api_key, base_id
 
@@ -40,7 +63,7 @@ def get_airtable_credentials() -> tuple[str, str] | None:
 # Skip all integration tests if credentials are not available
 pytestmark = pytest.mark.skipif(
     get_airtable_credentials() is None,
-    reason="AIRTABLE_API_KEY and AIRTABLE_BASE_ID environment variables required",
+    reason="AIRTABLE_API_KEY and (AIRTABLE_BASE_ID or AIRTABLE_BASE_NAME) environment variables required",
 )
 
 
@@ -78,35 +101,32 @@ def unique_table_name() -> str:
 
 
 def _delete_table_by_name(base, table_name: str) -> bool:
-    """Delete a table by name. Returns True if deleted."""
-    try:
-        schema = base.schema()
-        for table in schema.tables:
-            if table.name == table_name:
-                base.delete_table(table.id)
-                time.sleep(0.3)  # Rate limit delay
-                return True
-    except Exception as e:
-        print(f"Warning: Could not delete table {table_name}: {e}")
+    """Delete a table by name. Returns True if deleted.
+
+    NOTE: The Airtable API does not support table deletion.
+    Tables must be deleted manually via the Airtable web interface.
+    This function is kept for documentation purposes but always returns False.
+    """
+    # Airtable API does not support table deletion - tables must be deleted manually
     return False
 
 
 def _cleanup_test_tables(base) -> int:
-    """Delete all tables matching test pattern (test_*). Returns count deleted."""
-    deleted = 0
+    """Count tables matching test pattern (test_*).
+
+    NOTE: The Airtable API does not support table deletion.
+    This function only counts test tables and prints a warning if any exist.
+    Tables must be deleted manually via the Airtable web interface.
+    """
+    count = 0
     try:
         schema = base.schema()
         for table in schema.tables:
             if table.name.startswith("test_"):
-                try:
-                    base.delete_table(table.id)
-                    deleted += 1
-                    time.sleep(0.3)  # Rate limit delay
-                except Exception as e:
-                    print(f"Warning: Could not delete {table.name}: {e}")
+                count += 1
     except Exception as e:
-        print(f"Warning: Cleanup failed: {e}")
-    return deleted
+        print(f"Warning: Could not check for test tables: {e}")
+    return count
 
 
 @pytest.fixture
@@ -129,32 +149,36 @@ def created_tables(airtable_api: Api, base_id: str) -> Generator[list[str]]:
 def cleanup_test_tables_before_and_after_session(
     airtable_credentials: tuple[str, str],
 ) -> Generator[None]:
-    """Session-scoped cleanup that runs before and after all tests.
+    """Session-scoped fixture that warns about test tables.
 
-    BEFORE: Cleans up any leftover test tables from previous runs.
-    AFTER: Cleans up any test tables that might have been left behind
-           due to test failures or interruptions.
+    NOTE: The Airtable API does not support table deletion.
+    This fixture only counts test tables and prints warnings.
+    Tables must be deleted manually via the Airtable web interface.
 
-    This ensures:
-    1. Tests start with a clean slate
-    2. Tests don't leave behind clutter
-    3. Tests produce consistent results every run
+    BEFORE: Warns about any leftover test tables from previous runs.
+    AFTER: Warns about any test tables created during this run.
     """
     api_key, base_id = airtable_credentials
     api = Api(api_key)
     base = api.base(base_id)
 
-    # Pre-test cleanup: remove any leftover test tables
-    deleted_before = _cleanup_test_tables(base)
-    if deleted_before > 0:
-        print(f"\nPre-test cleanup: Deleted {deleted_before} leftover test table(s)")
+    # Pre-test check: count any leftover test tables
+    count_before = _cleanup_test_tables(base)
+    if count_before > 0:
+        print(
+            f"\nWARNING: Found {count_before} leftover test_* table(s). "
+            "These must be deleted manually via Airtable web interface."
+        )
 
     yield  # Run all tests
 
-    # Post-test cleanup: remove any remaining test tables
-    deleted_after = _cleanup_test_tables(base)
-    if deleted_after > 0:
-        print(f"\nPost-test cleanup: Deleted {deleted_after} leftover test table(s)")
+    # Post-test check: count any remaining test tables
+    count_after = _cleanup_test_tables(base)
+    if count_after > 0:
+        print(
+            f"\nWARNING: {count_after} test_* table(s) remain. "
+            "Delete them manually via Airtable web interface."
+        )
 
 
 @pytest.fixture

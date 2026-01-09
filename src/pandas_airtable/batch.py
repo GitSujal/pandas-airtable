@@ -254,17 +254,28 @@ def execute_batch_upsert(
         log_batch_operation("upsert", i + 1, total_batches, len(batch))
 
         try:
-            # Extract just the fields for batch_upsert
-            fields_list = [r["fields"] for r in batch]
-            result = table.batch_upsert(fields_list, key_fields=key_fields, replace=False)
+            # batch_upsert expects records in {"fields": {...}} format
+            result = table.batch_upsert(batch, key_fields=key_fields, replace=False)
 
-            # pyairtable's batch_upsert returns UpsertResultModel with:
-            # - created_records: list of RecordDict (dicts with "id" and "fields")
-            # - updated_records: list of RecordDict (dicts with "id" and "fields")
-            if hasattr(result, "created_records") and result.created_records:
-                created_ids.extend(r["id"] for r in result.created_records)
-            if hasattr(result, "updated_records") and result.updated_records:
-                updated_ids.extend(r["id"] for r in result.updated_records)
+            # pyairtable's batch_upsert returns a dict with:
+            # - createdRecords: list of record IDs
+            # - updatedRecords: list of record IDs
+            # - records: list of full record objects
+            if isinstance(result, dict):
+                if "createdRecords" in result:
+                    created_ids.extend(result["createdRecords"])
+                if "updatedRecords" in result:
+                    updated_ids.extend(result["updatedRecords"])
+            else:
+                # Fallback for object-based result (older pyairtable versions)
+                if hasattr(result, "created_records") and result.created_records:
+                    created_ids.extend(
+                        r["id"] if isinstance(r, dict) else r.id for r in result.created_records
+                    )
+                if hasattr(result, "updated_records") and result.updated_records:
+                    updated_ids.extend(
+                        r["id"] if isinstance(r, dict) else r.id for r in result.updated_records
+                    )
         except Exception as e:
             errors.append(BatchError(batch=batch, error=e))
 

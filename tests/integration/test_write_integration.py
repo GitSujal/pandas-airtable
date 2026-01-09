@@ -367,13 +367,20 @@ class TestWriteDuplicateKeyHandling:
         """Test that allow_duplicate_keys=True keeps last occurrence."""
         table_name, _ = test_table
 
-        # Create table with email field
+        # Create table with email field using table.create_field (not schema)
         base = airtable_api.base(base_id)
         try:
-            schema = base.schema().table(table_name)
-            schema.create_field("email", "singleLineText")
-            schema.create_field("score", "number", options={"precision": 0})
-            wait_for_api()
+            # Get table ID from schema
+            base_schema = base.schema()
+            table_id = None
+            for t in base_schema.tables:
+                if t.name == table_name:
+                    table_id = t.id
+                    break
+            if table_id:
+                table = airtable_api.table(base_id, table_id)
+                table.create_field("email", "singleLineText")
+                wait_for_api()
         except Exception:
             pass  # Field might already exist
 

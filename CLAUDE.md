@@ -20,7 +20,7 @@ uv run pytest tests/test_batch.py::TestChunkRecords::test_chunk_records_exact_ba
 # Run with coverage
 uv run pytest tests/ --ignore=tests/integration/ --cov=pandas_airtable --cov-report=term-missing
 
-# Run integration tests (requires AIRTABLE_API_KEY and AIRTABLE_BASE_ID env vars)
+# Run integration tests (requires AIRTABLE_API_KEY and either AIRTABLE_BASE_ID or AIRTABLE_BASE_NAME)
 uv run pytest tests/integration/ -v
 
 # Lint
@@ -41,6 +41,8 @@ The package exposes two main interfaces:
 - `pd.read_airtable(base_id, table_name, api_key, ...)` - Attached to pandas namespace in `__init__.py`
 - `df.airtable.to_airtable(base_id, table_name, api_key, ...)` - DataFrame accessor registered in `accessor.py`
 
+Both functions accept either `base_id` or `base_name` (not both). If multiple bases share the same name, the first one found is used.
+
 ### Module Responsibilities
 
 | Module | Purpose |
@@ -51,6 +53,7 @@ The package exposes two main interfaces:
 | `schema.py` | Infers Airtable field types from pandas dtypes, converts values |
 | `retry.py` | `retry_with_backoff()` and `RateLimitedExecutor` for 5 QPS limit |
 | `types.py` | Constants (`RATE_LIMIT_QPS=5`, `MAX_RECORDS_PER_REQUEST=10`), dataclasses |
+| `utils.py` | `get_base_id_from_name()` - resolves base name to base ID |
 | `exceptions.py` | 9 exception classes inheriting from `PandasAirtableError` |
 
 ### Data Flow
@@ -75,5 +78,8 @@ Integration tests run against real Airtable API and:
 Set credentials:
 ```bash
 export AIRTABLE_API_KEY="patXXX"
+# Use either base_id OR base_name
 export AIRTABLE_BASE_ID="appXXX"
+# OR
+export AIRTABLE_BASE_NAME="My Test Base"
 ```

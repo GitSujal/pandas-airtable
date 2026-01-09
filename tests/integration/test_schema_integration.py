@@ -86,17 +86,20 @@ class TestSchemaTypeMapping:
         """Test float columns map to number with decimals."""
         table_name, _ = test_table
 
-        # First update the Value field to support decimals
+        # First create the FloatValue field using table.create_field
         base = airtable_api.base(base_id)
         try:
-            schema = base.schema().table(table_name)
-            # Delete and recreate Value field with precision
-            for field in schema.fields:
-                if field.name == "Value":
-                    # Can't easily change precision, so we'll use another field
+            # Get table ID from schema
+            base_schema = base.schema()
+            table_id = None
+            for t in base_schema.tables:
+                if t.name == table_name:
+                    table_id = t.id
                     break
-            schema.create_field("FloatValue", "number", options={"precision": 2})
-            wait_for_api()
+            if table_id:
+                table = airtable_api.table(base_id, table_id)
+                table.create_field("FloatValue", "number", options={"precision": 2})
+                wait_for_api()
         except Exception:
             pass
 
@@ -126,19 +129,9 @@ class TestSchemaTypeMapping:
         api_key: str,
         base_id: str,
         test_table: tuple[str, str],
-        airtable_api: Api,
     ):
         """Test boolean columns map to checkbox."""
         table_name, _ = test_table
-
-        # Create checkbox field
-        base = airtable_api.base(base_id)
-        try:
-            schema = base.schema().table(table_name)
-            schema.create_field("Active", "checkbox")
-            wait_for_api()
-        except Exception:
-            pass
 
         df = pd.DataFrame(
             {
@@ -152,6 +145,7 @@ class TestSchemaTypeMapping:
             base_id,
             table_name,
             api_key,
+            allow_new_columns=True,
         )
 
         assert result.success
@@ -161,28 +155,19 @@ class TestSchemaTypeMapping:
         # Checkbox comes back as True/False
         alice_row = df_read[df_read["Name"] == "Alice"].iloc[0]
         bob_row = df_read[df_read["Name"] == "Bob"].iloc[0]
-        assert alice_row["Active"] is True
-        # False checkboxes might come back as None in Airtable
-        assert bob_row["Active"] in [False, None]
+        assert alice_row["Active"] == True  # noqa: E712 (intentional == for numpy bool)
+        # False checkboxes might come back as None/NA in Airtable
+        bob_active = bob_row["Active"]
+        assert pd.isna(bob_active) or bob_active == False  # noqa: E712
 
     def test_datetime_to_date(
         self,
         api_key: str,
         base_id: str,
         test_table: tuple[str, str],
-        airtable_api: Api,
     ):
         """Test datetime columns map to date."""
         table_name, _ = test_table
-
-        # Create date field
-        base = airtable_api.base(base_id)
-        try:
-            schema = base.schema().table(table_name)
-            schema.create_field("CreatedDate", "date")
-            wait_for_api()
-        except Exception:
-            pass
 
         df = pd.DataFrame(
             {
@@ -196,6 +181,7 @@ class TestSchemaTypeMapping:
             base_id,
             table_name,
             api_key,
+            allow_new_columns=True,
         )
 
         assert result.success

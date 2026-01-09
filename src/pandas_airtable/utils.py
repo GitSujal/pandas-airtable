@@ -7,6 +7,8 @@ import logging
 import re
 from typing import Any
 
+from pyairtable import Api
+
 logger = logging.getLogger("pandas_airtable")
 
 
@@ -85,3 +87,36 @@ def to_snake_case(name: str) -> str:
 def normalize_column_name(name: str) -> str:
     """Normalize an Airtable field name to a valid DataFrame column name."""
     return to_snake_case(name)
+
+
+def get_base_id_from_name(api_key: str, base_name: str) -> str:
+    """Get the base ID from the base name using the Airtable API.
+
+    Note: If there are multiple bases with the same name, only the first one
+    will be returned. In such cases, use base_id directly instead of base_name
+    to avoid ambiguity.
+
+    Args:
+        api_key: Airtable API key or personal access token.
+        base_name: The name of the base to look up.
+
+    Returns:
+        The base ID (e.g., "appXXXXXXXXXXXXXX").
+
+    Raises:
+        ValueError: If no base with the given name is found.
+
+    Examples:
+        >>> base_id = get_base_id_from_name("patXXX", "My Base")
+        >>> print(base_id)
+        appXXXXXXXXXXXXXX
+    """
+    api = Api(api_key=api_key)
+    bases = api.bases()
+
+    for base in bases:
+        if base.name == base_name:
+            logger.info(f"Found base '{base_name}' with ID: {base.id}")
+            return base.id
+
+    raise ValueError(f"Base with name '{base_name}' not found.")

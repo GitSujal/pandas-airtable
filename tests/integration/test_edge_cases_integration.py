@@ -251,12 +251,20 @@ class TestNullHandling:
         """Test a column with all null values."""
         table_name, _ = test_table
 
-        # Create optional field first
+        # Create optional field first using table.create_field (not schema)
         base = airtable_api.base(base_id)
         try:
-            schema = base.schema().table(table_name)
-            schema.create_field("OptionalField", "singleLineText")
-            wait_for_api()
+            # Get table ID from schema
+            base_schema = base.schema()
+            table_id = None
+            for t in base_schema.tables:
+                if t.name == table_name:
+                    table_id = t.id
+                    break
+            if table_id:
+                table = airtable_api.table(base_id, table_id)
+                table.create_field("OptionalField", "singleLineText")
+                wait_for_api()
         except Exception:
             pass
 

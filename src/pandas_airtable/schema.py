@@ -400,15 +400,21 @@ def coerce_dtypes(df: pd.DataFrame) -> pd.DataFrame:
 
         # Try to convert object columns to more specific types
         if df[col].dtype == object:
+            # Check for boolean values first (before numeric conversion)
+            sample = df[col].dropna().head(10)
+            if len(sample) > 0 and all(isinstance(v, bool) for v in sample):
+                # Column contains booleans, convert to boolean dtype
+                df[col] = df[col].astype("boolean")
+                continue
+
             # Try datetime conversion
             try:
                 # Check if values look like dates
-                sample = df[col].dropna().head(10)
                 if len(sample) > 0 and all(
                     isinstance(v, str) and any(c in v for c in ["-", "/", "T"]) and len(v) >= 8
                     for v in sample
                 ):
-                    converted = pd.to_datetime(df[col], errors="coerce")
+                    converted = pd.to_datetime(df[col], errors="coerce", format="mixed")
                     # Only use conversion if most values converted successfully
                     if converted.notna().sum() > len(converted) * 0.8:
                         df[col] = converted
