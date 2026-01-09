@@ -28,9 +28,7 @@ class TestRetryWithBackoff:
         mock_func = Mock(side_effect=[Exception("fail"), Exception("fail"), "success"])
 
         with patch("pandas_airtable.retry.time.sleep"):  # Don't actually sleep
-            result = retry_with_backoff(
-                mock_func, max_retries=3, base_delay=0.1
-            )
+            result = retry_with_backoff(mock_func, max_retries=3, base_delay=0.1)
 
         assert result == "success"
         assert mock_func.call_count == 3
@@ -39,7 +37,10 @@ class TestRetryWithBackoff:
         """Test max retries exceeded raises error."""
         mock_func = Mock(side_effect=Exception("always fail"))
 
-        with patch("pandas_airtable.retry.time.sleep"), pytest.raises(AirtableRateLimitError) as exc_info:
+        with (
+            patch("pandas_airtable.retry.time.sleep"),
+            pytest.raises(AirtableRateLimitError) as exc_info,
+        ):
             retry_with_backoff(mock_func, max_retries=3, base_delay=0.1)
 
         assert exc_info.value.retries == 3
@@ -76,9 +77,7 @@ class TestRetryWithBackoff:
             sleep_times.append(seconds)
 
         with patch("pandas_airtable.retry.time.sleep", side_effect=mock_sleep):
-            retry_with_backoff(
-                mock_func, max_retries=5, base_delay=10.0, max_delay=15.0
-            )
+            retry_with_backoff(mock_func, max_retries=5, base_delay=10.0, max_delay=15.0)
 
         # All delays should be <= max_delay + jitter
         for delay in sleep_times:

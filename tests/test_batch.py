@@ -143,9 +143,7 @@ class TestPrepareRecords:
 
     def test_prepare_update_records(self):
         """Test update record preparation includes ID."""
-        df = pd.DataFrame(
-            {"_airtable_id": ["rec1", "rec2"], "name": ["Alice", "Bob"]}
-        )
+        df = pd.DataFrame({"_airtable_id": ["rec1", "rec2"], "name": ["Alice", "Bob"]})
 
         records = prepare_update_records(df)
 

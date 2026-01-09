@@ -60,7 +60,10 @@ class TestToAirtableValidation:
 
         with pytest.raises(AirtableValidationError, match="if_exists"):
             df.airtable.to_airtable(
-                "app123", "TestTable", api_key="pat123", if_exists="invalid"  # type: ignore
+                "app123",
+                "TestTable",
+                api_key="pat123",
+                if_exists="invalid",  # type: ignore
             )
 
     def test_upsert_requires_key_field(self):
@@ -68,9 +71,7 @@ class TestToAirtableValidation:
         df = pd.DataFrame({"name": ["Alice"]})
 
         with pytest.raises(AirtableValidationError, match="key_field"):
-            df.airtable.to_airtable(
-                "app123", "TestTable", api_key="pat123", if_exists="upsert"
-            )
+            df.airtable.to_airtable("app123", "TestTable", api_key="pat123", if_exists="upsert")
 
     def test_upsert_key_field_must_exist(self):
         """Test key_field must exist in DataFrame."""
@@ -90,9 +91,7 @@ class TestToAirtableValidation:
         df = pd.DataFrame({"name": ["Alice"]})
 
         with pytest.raises(AirtableValidationError, match="batch_size"):
-            df.airtable.to_airtable(
-                "app123", "TestTable", api_key="pat123", batch_size=20
-            )
+            df.airtable.to_airtable("app123", "TestTable", api_key="pat123", batch_size=20)
 
 
 class TestToAirtableAppend:
@@ -226,18 +225,16 @@ class TestToAirtableDuplicateKeys:
 
         with patch("pandas_airtable.accessor.Api"), pytest.raises(AirtableDuplicateKeyError):
             df.airtable.to_airtable(
-                    "app123",
-                    "TestTable",
-                    api_key="pat123",
-                    if_exists="upsert",
-                    key_field="email",
-                )
+                "app123",
+                "TestTable",
+                api_key="pat123",
+                if_exists="upsert",
+                key_field="email",
+            )
 
     def test_duplicate_keys_allowed(self):
         """Test allow_duplicate_keys uses last occurrence."""
-        df = pd.DataFrame(
-            {"email": ["a@b.com", "a@b.com"], "name": ["First", "Last"]}
-        )
+        df = pd.DataFrame({"email": ["a@b.com", "a@b.com"], "name": ["First", "Last"]})
 
         with patch("pandas_airtable.accessor.Api") as MockApi:
             mock_table = Mock()
@@ -308,9 +305,7 @@ class TestToAirtableTableCreation:
             mock_table.batch_create.return_value = [{"id": "rec1", "fields": {}}]
             MockApi.return_value.table.return_value = mock_table
 
-            df.airtable.to_airtable(
-                "app123", "TestTable", api_key="pat123", create_table=True
-            )
+            df.airtable.to_airtable("app123", "TestTable", api_key="pat123", create_table=True)
 
             mock_base.create_table.assert_called_once()
 
@@ -330,9 +325,7 @@ class TestToAirtableTableCreation:
             MockApi.return_value.table.return_value = mock_table
 
             with pytest.raises(AirtableTableNotFoundError):
-                df.airtable.to_airtable(
-                    "app123", "TestTable", api_key="pat123", create_table=False
-                )
+                df.airtable.to_airtable("app123", "TestTable", api_key="pat123", create_table=False)
 
 
 class TestToAirtableSchemaHandling:
@@ -363,9 +356,7 @@ class TestToAirtableSchemaHandling:
             mock_base.schema.return_value = mock_schema
             MockApi.return_value.base.return_value = mock_base
 
-            df.airtable.to_airtable(
-                "app123", "TestTable", api_key="pat123", allow_new_columns=True
-            )
+            df.airtable.to_airtable("app123", "TestTable", api_key="pat123", allow_new_columns=True)
 
             # Should have created the new field via Table.create_field()
             mock_table.create_field.assert_called()
@@ -431,9 +422,7 @@ class TestToAirtableDryRun:
             mock_base.schema.return_value = mock_schema
             MockApi.return_value.base.return_value = mock_base
 
-            result = df.airtable.to_airtable(
-                "app123", "TestTable", api_key="pat123", dry_run=True
-            )
+            result = df.airtable.to_airtable("app123", "TestTable", api_key="pat123", dry_run=True)
 
             assert isinstance(result, DryRunResult)
             assert result.operation == "append"

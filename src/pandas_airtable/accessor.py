@@ -163,9 +163,7 @@ class AirtableAccessor:
             return _execute_replace(table, records, batch_size)
         elif if_exists == "upsert":
             if not key_field:
-                raise AirtableValidationError(
-                    "key_field is required for upsert operation"
-                )
+                raise AirtableValidationError("key_field is required for upsert operation")
             return execute_batch_upsert(table, records, [key_field], batch_size)
         else:
             raise AirtableValidationError(f"Invalid if_exists value: {if_exists}")
@@ -203,15 +201,12 @@ def _validate_write_inputs(
 
     valid_modes = ("append", "replace", "upsert")
     if if_exists not in valid_modes:
-        raise AirtableValidationError(
-            f"if_exists must be one of {valid_modes}. Got: '{if_exists}'"
-        )
+        raise AirtableValidationError(f"if_exists must be one of {valid_modes}. Got: '{if_exists}'")
 
     if if_exists == "upsert":
         if not key_field:
             raise AirtableValidationError(
-                "if_exists='upsert' requires a key_field parameter to identify "
-                "records for update."
+                "if_exists='upsert' requires a key_field parameter to identify records for update."
             )
         if key_field not in df.columns:
             raise AirtableValidationError(
@@ -356,9 +351,7 @@ def _sync_schema(
                         field_type=field_def["type"],
                     )
                 except Exception as e:
-                    raise AirtableFieldCreationError(
-                        field_def["name"], e
-                    ) from e
+                    raise AirtableFieldCreationError(field_def["name"], e) from e
 
     except AirtableSchemaError:
         raise

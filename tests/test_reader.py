@@ -54,9 +54,7 @@ class TestReadAirtableBasic:
             mock_table.all.return_value = sample_airtable_records
             MockApi.return_value.table.return_value = mock_table
 
-            read_airtable(
-                "app123", "TestTable", api_key="pat123", formula="{age} > 25"
-            )
+            read_airtable("app123", "TestTable", api_key="pat123", formula="{age} > 25")
 
             mock_table.all.assert_called_once()
             call_kwargs = mock_table.all.call_args[1]
@@ -89,9 +87,7 @@ class TestReadAirtableMetadata:
 
             assert AIRTABLE_CREATED_TIME_COLUMN in df.columns
             # Should be datetime type after coercion
-            assert pd.api.types.is_datetime64_any_dtype(
-                df[AIRTABLE_CREATED_TIME_COLUMN]
-            )
+            assert pd.api.types.is_datetime64_any_dtype(df[AIRTABLE_CREATED_TIME_COLUMN])
 
 
 class TestReadAirtableSpecialFields:
@@ -211,7 +207,10 @@ class TestReadAirtablePagination:
     def test_fetches_all_pages(self):
         """Verify all pages are fetched via pyairtable's all() method."""
         # pyairtable handles pagination internally - we just verify all() is called
-        records = [{"id": f"rec{i}", "createdTime": "2023-01-01T00:00:00.000Z", "fields": {"n": i}} for i in range(150)]
+        records = [
+            {"id": f"rec{i}", "createdTime": "2023-01-01T00:00:00.000Z", "fields": {"n": i}}
+            for i in range(150)
+        ]
 
         with patch("pandas_airtable.reader.Api") as MockApi:
             mock_table = Mock()

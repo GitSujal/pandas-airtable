@@ -30,14 +30,16 @@ class TestSpecialCharacters:
         """Test special characters are preserved in text fields."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": [
-                "Test & Demo",
-                "Quotes: 'single' and \"double\"",
-                "Symbols: @#$%^&*()",
-            ],
-            "Value": [1, 2, 3],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [
+                    "Test & Demo",
+                    "Quotes: 'single' and \"double\"",
+                    "Symbols: @#$%^&*()",
+                ],
+                "Value": [1, 2, 3],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -57,15 +59,17 @@ class TestSpecialCharacters:
         """Test Unicode characters are preserved."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": [
-                "Japanese: 日本語",
-                "Emoji: 🎉🚀",
-                "Greek: αβγδ",
-                "Arabic: العربية",
-            ],
-            "Value": [1, 2, 3, 4],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [
+                    "Japanese: 日本語",
+                    "Emoji: 🎉🚀",
+                    "Greek: αβγδ",
+                    "Arabic: العربية",
+                ],
+                "Value": [1, 2, 3, 4],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -88,10 +92,12 @@ class TestSpecialCharacters:
         """Test newlines are preserved in text fields."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Line1\nLine2\nLine3"],
-            "Value": [1],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Line1\nLine2\nLine3"],
+                "Value": [1],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -112,10 +118,12 @@ class TestSpecialCharacters:
         table_name, _ = test_table
 
         long_text = "A" * 5000  # 5000 character string
-        df = pd.DataFrame({
-            "Name": [long_text],
-            "Value": [1],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [long_text],
+                "Value": [1],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -139,10 +147,12 @@ class TestEmptyStringHandling:
         """Test empty string values in text columns."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Alice", "", "Charlie"],
-            "Value": [1, 2, 3],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice", "", "Charlie"],
+                "Value": [1, 2, 3],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -162,10 +172,12 @@ class TestEmptyStringHandling:
         """Test strings containing only whitespace."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Normal", "   ", "\t\n"],
-            "Value": [1, 2, 3],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Normal", "   ", "\t\n"],
+                "Value": [1, 2, 3],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -187,10 +199,12 @@ class TestNullHandling:
         """Test null values in text columns."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Alice", None, "Charlie"],
-            "Value": [1, 2, 3],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice", None, "Charlie"],
+                "Value": [1, 2, 3],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -211,10 +225,12 @@ class TestNullHandling:
         """Test null values in numeric columns."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["A", "B", "C"],
-            "Value": [100.0, None, 300.0],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["A", "B", "C"],
+                "Value": [100.0, None, 300.0],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -244,11 +260,13 @@ class TestNullHandling:
         except Exception:
             pass
 
-        df = pd.DataFrame({
-            "Name": ["A", "B", "C"],
-            "Value": [1, 2, 3],
-            "OptionalField": [None, None, None],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["A", "B", "C"],
+                "Value": [1, 2, 3],
+                "OptionalField": [None, None, None],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -266,10 +284,12 @@ class TestLargeDatasets:
         """Test writing 100 records (10 batches)."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": [f"Record_{i}" for i in range(100)],
-            "Value": list(range(100)),
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"Record_{i}" for i in range(100)],
+                "Value": list(range(100)),
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
 
@@ -290,10 +310,12 @@ class TestLargeDatasets:
         table_name, _ = test_table
 
         # Test exactly 10 records (one batch)
-        df = pd.DataFrame({
-            "Name": [f"Item_{i}" for i in range(10)],
-            "Value": list(range(10)),
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"Item_{i}" for i in range(10)],
+                "Value": list(range(10)),
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -308,10 +330,12 @@ class TestLargeDatasets:
         """Test 11 records (two batches: 10 + 1)."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": [f"Item_{i}" for i in range(11)],
-            "Value": list(range(11)),
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"Item_{i}" for i in range(11)],
+                "Value": list(range(11)),
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success
@@ -438,10 +462,12 @@ class TestConcurrentOperations:
 
         # Write 3 batches sequentially
         for i in range(3):
-            df = pd.DataFrame({
-                "Name": [f"Batch{i}_Item{j}" for j in range(5)],
-                "Value": [i * 10 + j for j in range(5)],
-            })
+            df = pd.DataFrame(
+                {
+                    "Name": [f"Batch{i}_Item{j}" for j in range(5)],
+                    "Value": [i * 10 + j for j in range(5)],
+                }
+            )
             result = df.airtable.to_airtable(base_id, table_name, api_key)
             assert result.success
             wait_for_api()
@@ -491,11 +517,13 @@ class TestColumnNames:
         """Test column names containing spaces."""
         created_tables.append(unique_table_name)
 
-        df = pd.DataFrame({
-            "First Name": ["Alice", "Bob"],
-            "Last Name": ["Smith", "Jones"],
-            "Age Value": [30, 25],
-        })
+        df = pd.DataFrame(
+            {
+                "First Name": ["Alice", "Bob"],
+                "Last Name": ["Smith", "Jones"],
+                "Age Value": [30, 25],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -520,10 +548,12 @@ class TestColumnNames:
         """Test column names with special characters."""
         created_tables.append(unique_table_name)
 
-        df = pd.DataFrame({
-            "Name (Primary)": ["Alice", "Bob"],
-            "Score #1": [100, 200],
-        })
+        df = pd.DataFrame(
+            {
+                "Name (Primary)": ["Alice", "Bob"],
+                "Score #1": [100, 200],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -548,10 +578,12 @@ class TestColumnNames:
         """Test user column starting with underscore (potential conflict)."""
         created_tables.append(unique_table_name)
 
-        df = pd.DataFrame({
-            "_custom_field": ["value1", "value2"],
-            "normal_field": [1, 2],
-        })
+        df = pd.DataFrame(
+            {
+                "_custom_field": ["value1", "value2"],
+                "normal_field": [1, 2],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -580,10 +612,12 @@ class TestUpsertEdgeCases:
         """Test upsert behavior when key field contains null values."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Alice", None, "Charlie"],
-            "Value": [100, 200, 300],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice", None, "Charlie"],
+                "Value": [100, 200, 300],
+            }
+        )
 
         # Upsert with null in key field - behavior may vary
         result = df.airtable.to_airtable(
@@ -610,10 +644,12 @@ class TestDataIntegrity:
         """Test that numeric values maintain precision."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Test"],
-            "Value": [999999],  # Large integer
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Test"],
+                "Value": [999999],  # Large integer
+            }
+        )
 
         df.airtable.to_airtable(base_id, table_name, api_key)
         wait_for_api()
@@ -631,18 +667,22 @@ class TestDataIntegrity:
         table_name, _ = test_table
 
         # Initial insert
-        df1 = pd.DataFrame({
-            "Name": ["Alice", "Bob"],
-            "Value": [100, 200],
-        })
+        df1 = pd.DataFrame(
+            {
+                "Name": ["Alice", "Bob"],
+                "Value": [100, 200],
+            }
+        )
         df1.airtable.to_airtable(base_id, table_name, api_key, if_exists="upsert", key_field="Name")
         wait_for_api()
 
         # Upsert with updated values
-        df2 = pd.DataFrame({
-            "Name": ["Alice", "Bob"],
-            "Value": [150, 250],
-        })
+        df2 = pd.DataFrame(
+            {
+                "Name": ["Alice", "Bob"],
+                "Value": [150, 250],
+            }
+        )
         df2.airtable.to_airtable(base_id, table_name, api_key, if_exists="upsert", key_field="Name")
         wait_for_api()
 
@@ -667,18 +707,22 @@ class TestDataIntegrity:
         table_name, _ = test_table
 
         # Write initial data
-        df1 = pd.DataFrame({
-            "Name": ["Old1", "Old2", "Old3"],
-            "Value": [1, 2, 3],
-        })
+        df1 = pd.DataFrame(
+            {
+                "Name": ["Old1", "Old2", "Old3"],
+                "Value": [1, 2, 3],
+            }
+        )
         df1.airtable.to_airtable(base_id, table_name, api_key)
         wait_for_api()
 
         # Replace all data
-        df2 = pd.DataFrame({
-            "Name": ["New1", "New2"],
-            "Value": [100, 200],
-        })
+        df2 = pd.DataFrame(
+            {
+                "Name": ["New1", "New2"],
+                "Value": [100, 200],
+            }
+        )
         result = df2.airtable.to_airtable(base_id, table_name, api_key, if_exists="replace")
         wait_for_api()
 
@@ -704,11 +748,13 @@ class TestMetadataColumns:
         """Test that _airtable_id in DataFrame is ignored during write."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "_airtable_id": ["rec123fake", "rec456fake"],  # Fake IDs
-            "Name": ["Alice", "Bob"],
-            "Value": [100, 200],
-        })
+        df = pd.DataFrame(
+            {
+                "_airtable_id": ["rec123fake", "rec456fake"],  # Fake IDs
+                "Name": ["Alice", "Bob"],
+                "Value": [100, 200],
+            }
+        )
 
         # Should not try to create _airtable_id field
         result = df.airtable.to_airtable(base_id, table_name, api_key)
@@ -729,11 +775,13 @@ class TestMetadataColumns:
         """Test that _airtable_created_time is ignored during write."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "_airtable_created_time": ["2020-01-01T00:00:00.000Z", "2020-01-02T00:00:00.000Z"],
-            "Name": ["Alice", "Bob"],
-            "Value": [100, 200],
-        })
+        df = pd.DataFrame(
+            {
+                "_airtable_created_time": ["2020-01-01T00:00:00.000Z", "2020-01-02T00:00:00.000Z"],
+                "Name": ["Alice", "Bob"],
+                "Value": [100, 200],
+            }
+        )
 
         result = df.airtable.to_airtable(base_id, table_name, api_key)
         assert result.success

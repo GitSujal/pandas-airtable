@@ -98,9 +98,7 @@ class TestInferAirtableSchema:
 
     def test_skips_metadata_columns(self):
         """Test _airtable_ columns are skipped."""
-        df = pd.DataFrame(
-            {"_airtable_id": ["rec1"], "_airtable_created_time": ["2023-01-01"]}
-        )
+        df = pd.DataFrame({"_airtable_id": ["rec1"], "_airtable_created_time": ["2023-01-01"]})
         schema = infer_airtable_schema(df)
 
         assert "_airtable_id" not in schema

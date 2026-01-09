@@ -20,9 +20,7 @@ from pandas_airtable.types import (
 from pandas_airtable.utils import chunk_records, log_batch_operation
 
 
-def check_duplicate_keys(
-    df: pd.DataFrame, key_field: str, allow_duplicates: bool
-) -> pd.DataFrame:
+def check_duplicate_keys(df: pd.DataFrame, key_field: str, allow_duplicates: bool) -> pd.DataFrame:
     """Check for duplicate keys in DataFrame.
 
     If allow_duplicates=False and duplicates exist, raise AirtableDuplicateKeyError.
@@ -119,9 +117,7 @@ def prepare_update_records(
         List of {"id": ..., "fields": {...}} dicts ready for API.
     """
     if AIRTABLE_ID_COLUMN not in df.columns:
-        raise ValueError(
-            f"DataFrame must have '{AIRTABLE_ID_COLUMN}' column for update operations"
-        )
+        raise ValueError(f"DataFrame must have '{AIRTABLE_ID_COLUMN}' column for update operations")
 
     if schema is None:
         schema = infer_airtable_schema(df)

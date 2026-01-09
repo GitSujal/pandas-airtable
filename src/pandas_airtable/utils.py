@@ -42,9 +42,7 @@ def log_retry(attempt: int, max_retries: int, delay: float, error: str) -> None:
     )
 
 
-def log_api_response(
-    operation: str, status: str, record_count: int, duration_ms: float
-) -> None:
+def log_api_response(operation: str, status: str, record_count: int, duration_ms: float) -> None:
     """Log API response details."""
     logger.debug(
         json.dumps(

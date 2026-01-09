@@ -182,10 +182,12 @@ class TestWriteReplaceMode:
         table = airtable_api.table(base_id, table_name)
 
         # Insert initial data
-        table.batch_create([
-            {"Name": "Record1", "Value": 1},
-            {"Name": "Record2", "Value": 2},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Record1", "Value": 1},
+                {"Name": "Record2", "Value": 2},
+            ]
+        )
         wait_for_api()
 
         # Replace with empty DataFrame
@@ -218,10 +220,12 @@ class TestWriteUpsertMode:
         """Test upsert creates records when none exist."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Alice", "Bob", "Charlie"],
-            "Value": [100, 200, 300],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice", "Bob", "Charlie"],
+                "Value": [100, 200, 300],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -251,10 +255,12 @@ class TestWriteUpsertMode:
         wait_for_api()
 
         # Upsert with updated value
-        df = pd.DataFrame({
-            "Name": ["Alice", "Bob"],
-            "Value": [100, 200],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice", "Bob"],
+                "Value": [100, 200],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -286,17 +292,21 @@ class TestWriteUpsertMode:
         table = airtable_api.table(base_id, table_name)
 
         # Create some initial records
-        table.batch_create([
-            {"Name": "Existing1", "Value": 10},
-            {"Name": "Existing2", "Value": 20},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Existing1", "Value": 10},
+                {"Name": "Existing2", "Value": 20},
+            ]
+        )
         wait_for_api()
 
         # Upsert: update one, create two new
-        df = pd.DataFrame({
-            "Name": ["Existing1", "New1", "New2"],
-            "Value": [100, 200, 300],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Existing1", "New1", "New2"],
+                "Value": [100, 200, 300],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -367,11 +377,13 @@ class TestWriteDuplicateKeyHandling:
         except Exception:
             pass  # Field might already exist
 
-        df = pd.DataFrame({
-            "Name": ["First", "Second", "Third"],
-            "email": ["a@test.com", "a@test.com", "b@test.com"],
-            "Value": [100, 200, 300],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["First", "Second", "Third"],
+                "email": ["a@test.com", "a@test.com", "b@test.com"],
+                "Value": [100, 200, 300],
+            }
+        )
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
@@ -520,10 +532,12 @@ class TestWriteBatching:
         """Test writing with smaller batch size."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": [f"Item_{i}" for i in range(15)],
-            "Value": list(range(15)),
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"Item_{i}" for i in range(15)],
+                "Value": list(range(15)),
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,

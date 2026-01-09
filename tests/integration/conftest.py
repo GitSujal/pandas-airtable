@@ -110,9 +110,7 @@ def _cleanup_test_tables(base) -> int:
 
 
 @pytest.fixture
-def created_tables(
-    airtable_api: Api, base_id: str
-) -> Generator[list[str]]:
+def created_tables(airtable_api: Api, base_id: str) -> Generator[list[str]]:
     """Track created tables for cleanup after tests.
 
     Yields a list that tests can append table names to.
@@ -212,71 +210,85 @@ def clean_test_table(
 @pytest.fixture
 def simple_dataframe() -> pd.DataFrame:
     """Simple DataFrame with basic types."""
-    return pd.DataFrame({
-        "Name": ["Alice", "Bob", "Charlie"],
-        "Value": [100, 200, 300],
-    })
+    return pd.DataFrame(
+        {
+            "Name": ["Alice", "Bob", "Charlie"],
+            "Value": [100, 200, 300],
+        }
+    )
 
 
 @pytest.fixture
 def dataframe_with_all_types() -> pd.DataFrame:
     """DataFrame with all supported data types."""
-    return pd.DataFrame({
-        "text_field": ["Hello", "World", "Test"],
-        "number_int": [1, 2, 3],
-        "number_float": [1.5, 2.5, 3.5],
-        "checkbox_field": [True, False, True],
-        "date_field": pd.to_datetime(["2024-01-15", "2024-06-20", "2024-12-25"]),
-    })
+    return pd.DataFrame(
+        {
+            "text_field": ["Hello", "World", "Test"],
+            "number_int": [1, 2, 3],
+            "number_float": [1.5, 2.5, 3.5],
+            "checkbox_field": [True, False, True],
+            "date_field": pd.to_datetime(["2024-01-15", "2024-06-20", "2024-12-25"]),
+        }
+    )
 
 
 @pytest.fixture
 def large_dataframe() -> pd.DataFrame:
     """DataFrame with 50 rows for batch testing."""
-    return pd.DataFrame({
-        "Name": [f"Item_{i}" for i in range(50)],
-        "Value": list(range(50)),
-    })
+    return pd.DataFrame(
+        {
+            "Name": [f"Item_{i}" for i in range(50)],
+            "Value": list(range(50)),
+        }
+    )
 
 
 @pytest.fixture
 def dataframe_with_duplicates() -> pd.DataFrame:
     """DataFrame with duplicate key values for upsert testing."""
-    return pd.DataFrame({
-        "email": ["a@test.com", "b@test.com", "a@test.com", "c@test.com"],
-        "name": ["Alice", "Bob", "Alice Updated", "Charlie"],
-        "score": [100, 200, 150, 300],
-    })
+    return pd.DataFrame(
+        {
+            "email": ["a@test.com", "b@test.com", "a@test.com", "c@test.com"],
+            "name": ["Alice", "Bob", "Alice Updated", "Charlie"],
+            "score": [100, 200, 150, 300],
+        }
+    )
 
 
 @pytest.fixture
 def dataframe_with_nulls() -> pd.DataFrame:
     """DataFrame with null/NaN values."""
-    return pd.DataFrame({
-        "Name": ["Alice", None, "Charlie"],
-        "Value": [100, 200, None],
-        "Active": [True, None, False],
-    })
+    return pd.DataFrame(
+        {
+            "Name": ["Alice", None, "Charlie"],
+            "Value": [100, 200, None],
+            "Active": [True, None, False],
+        }
+    )
 
 
 @pytest.fixture
 def dataframe_with_special_chars() -> pd.DataFrame:
     """DataFrame with special characters in values."""
-    return pd.DataFrame({
-        "Name": ["Test & Demo", "Line1\nLine2", "Quote's \"Test\""],
-        "Value": [1, 2, 3],
-    })
+    return pd.DataFrame(
+        {
+            "Name": ["Test & Demo", "Line1\nLine2", 'Quote\'s "Test"'],
+            "Value": [1, 2, 3],
+        }
+    )
 
 
 @pytest.fixture
 def dataframe_for_schema_evolution() -> pd.DataFrame:
     """DataFrame with extra columns for schema evolution testing."""
-    return pd.DataFrame({
-        "Name": ["Test1", "Test2"],
-        "Value": [100, 200],
-        "NewTextField": ["extra1", "extra2"],
-        "NewNumberField": [10, 20],
-    })
+    return pd.DataFrame(
+        {
+            "Name": ["Test1", "Test2"],
+            "Value": [100, 200],
+            "NewTextField": ["extra1", "extra2"],
+            "NewNumberField": [10, 20],
+        }
+    )
 
 
 # Utility functions for tests

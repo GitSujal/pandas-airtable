@@ -405,9 +405,7 @@ def coerce_dtypes(df: pd.DataFrame) -> pd.DataFrame:
                 # Check if values look like dates
                 sample = df[col].dropna().head(10)
                 if len(sample) > 0 and all(
-                    isinstance(v, str)
-                    and any(c in v for c in ["-", "/", "T"])
-                    and len(v) >= 8
+                    isinstance(v, str) and any(c in v for c in ["-", "/", "T"]) and len(v) >= 8
                     for v in sample
                 ):
                     converted = pd.to_datetime(df[col], errors="coerce")

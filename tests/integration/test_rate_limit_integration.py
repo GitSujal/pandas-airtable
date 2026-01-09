@@ -31,10 +31,12 @@ class TestRateLimitHandling:
 
         # Create 100 records - requires 10 batches
         # At 5 QPS limit, this should trigger rate limiting if done too fast
-        df = pd.DataFrame({
-            "Name": [f"RateTest_{i}" for i in range(100)],
-            "Value": list(range(100)),
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"RateTest_{i}" for i in range(100)],
+                "Value": list(range(100)),
+            }
+        )
 
         start_time = time.time()
         result = df.airtable.to_airtable(
@@ -54,7 +56,7 @@ class TestRateLimitHandling:
         df_read = read_airtable(base_id, table_name, api_key)
         assert len(df_read) == 100
 
-        print(f"\n100 records written in {elapsed:.2f}s ({100/elapsed:.1f} records/sec)")
+        print(f"\n100 records written in {elapsed:.2f}s ({100 / elapsed:.1f} records/sec)")
 
     def test_rapid_sequential_reads(
         self,
@@ -100,10 +102,12 @@ class TestRateLimitHandling:
 
         # 200 records = 20 batches of 10
         # This will definitely trigger rate limiting at 5 QPS
-        df = pd.DataFrame({
-            "Name": [f"LargeTest_{i}" for i in range(200)],
-            "Value": list(range(200)),
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"LargeTest_{i}" for i in range(200)],
+                "Value": list(range(200)),
+            }
+        )
 
         start_time = time.time()
         result = df.airtable.to_airtable(
@@ -120,8 +124,8 @@ class TestRateLimitHandling:
         # At 5 QPS, 20 batches should take at least 4 seconds
         # If it's much faster, rate limiting might not be working
         print(f"\n200 records written in {elapsed:.2f}s")
-        print(f"Average rate: {200/elapsed:.1f} records/sec")
-        print(f"Batches per second: {20/elapsed:.2f}")
+        print(f"Average rate: {200 / elapsed:.1f} records/sec")
+        print(f"Batches per second: {20 / elapsed:.2f}")
 
         # Verify all records exist
         wait_for_api()
@@ -165,7 +169,7 @@ class TestRateLimitedExecutor:
         # 10 requests at 5 QPS should take ~2 seconds if properly throttled
         # Allow some flexibility for processing time
         print(f"\n10 requests via executor in {elapsed:.2f}s")
-        print(f"Request rate: {10/elapsed:.2f} req/sec")
+        print(f"Request rate: {10 / elapsed:.2f} req/sec")
 
 
 class TestRetryWithBackoff:
@@ -208,16 +212,18 @@ class TestConcurrentBatchOperations:
 
         # Insert 50 initial records
         for i in range(5):
-            batch = [{"Name": f"Old_{j}", "Value": j} for j in range(i*10, (i+1)*10)]
+            batch = [{"Name": f"Old_{j}", "Value": j} for j in range(i * 10, (i + 1) * 10)]
             table.batch_create(batch)
             wait_for_api()
 
         # Replace with 50 new records
         # This requires: 5 delete batches + 5 create batches = 10 API calls
-        df = pd.DataFrame({
-            "Name": [f"New_{i}" for i in range(50)],
-            "Value": [i * 10 for i in range(50)],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"New_{i}" for i in range(50)],
+                "Value": [i * 10 for i in range(50)],
+            }
+        )
 
         start_time = time.time()
         result = df.airtable.to_airtable(
@@ -254,15 +260,17 @@ class TestConcurrentBatchOperations:
 
         # Insert 30 initial records
         for i in range(3):
-            batch = [{"Name": f"User_{j}", "Value": j} for j in range(i*10, (i+1)*10)]
+            batch = [{"Name": f"User_{j}", "Value": j} for j in range(i * 10, (i + 1) * 10)]
             table.batch_create(batch)
             wait_for_api()
 
         # Upsert: update 20 existing + create 20 new = 40 records
-        df = pd.DataFrame({
-            "Name": [f"User_{i}" for i in range(40)],  # 0-29 exist, 30-39 are new
-            "Value": [i * 100 for i in range(40)],  # Updated values
-        })
+        df = pd.DataFrame(
+            {
+                "Name": [f"User_{i}" for i in range(40)],  # 0-29 exist, 30-39 are new
+                "Value": [i * 100 for i in range(40)],  # Updated values
+            }
+        )
 
         start_time = time.time()
         result = df.airtable.to_airtable(
@@ -306,10 +314,12 @@ class TestStressConditions:
 
         # 20 small writes of 5 records each = 100 records total
         for i in range(20):
-            df = pd.DataFrame({
-                "Name": [f"Stress_{i}_{j}" for j in range(5)],
-                "Value": [i * 10 + j for j in range(5)],
-            })
+            df = pd.DataFrame(
+                {
+                    "Name": [f"Stress_{i}_{j}" for j in range(5)],
+                    "Value": [i * 10 + j for j in range(5)],
+                }
+            )
 
             result = df.airtable.to_airtable(
                 base_id,
@@ -326,7 +336,7 @@ class TestStressConditions:
         assert successful == 20, f"Only {successful}/20 operations succeeded"
 
         print(f"\n20 sequential writes in {elapsed:.2f}s")
-        print(f"Operations per second: {20/elapsed:.2f}")
+        print(f"Operations per second: {20 / elapsed:.2f}")
 
         # Verify total records
         wait_for_api()
@@ -346,10 +356,12 @@ class TestStressConditions:
 
         for i in range(10):
             # Write 5 records
-            df = pd.DataFrame({
-                "Name": [f"Alt_{i}_{j}" for j in range(5)],
-                "Value": [i * 10 + j for j in range(5)],
-            })
+            df = pd.DataFrame(
+                {
+                    "Name": [f"Alt_{i}_{j}" for j in range(5)],
+                    "Value": [i * 10 + j for j in range(5)],
+                }
+            )
             result = df.airtable.to_airtable(base_id, table_name, api_key)
             assert result.success
 

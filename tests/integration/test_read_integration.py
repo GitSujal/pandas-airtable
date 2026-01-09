@@ -120,10 +120,12 @@ class TestReadWithView:
         table = airtable_api.table(base_id, table_name)
 
         # Insert test data
-        table.batch_create([
-            {"Name": "Alice", "Value": 100},
-            {"Name": "Bob", "Value": 200},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Alice", "Value": 100},
+                {"Name": "Bob", "Value": 200},
+            ]
+        )
         wait_for_api()
 
         # Read without view (should get all records)
@@ -145,11 +147,13 @@ class TestReadWithView:
         table = airtable_api.table(base_id, table_name)
 
         # Insert test data
-        table.batch_create([
-            {"Name": "Alice", "Value": 100},
-            {"Name": "Bob", "Value": 200},
-            {"Name": "Charlie", "Value": 50},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Alice", "Value": 100},
+                {"Name": "Bob", "Value": 200},
+                {"Name": "Charlie", "Value": 50},
+            ]
+        )
         wait_for_api()
 
         # Formula filter should work even without view
@@ -177,11 +181,13 @@ class TestReadWithFilters:
         table = airtable_api.table(base_id, table_name)
 
         # Insert test data
-        table.batch_create([
-            {"Name": "Low", "Value": 10},
-            {"Name": "Medium", "Value": 50},
-            {"Name": "High", "Value": 100},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Low", "Value": 10},
+                {"Name": "Medium", "Value": 50},
+                {"Name": "High", "Value": 100},
+            ]
+        )
         wait_for_api()
 
         # Read with formula filter
@@ -207,12 +213,14 @@ class TestReadWithFilters:
         table = airtable_api.table(base_id, table_name)
 
         # Insert test data
-        table.batch_create([
-            {"Name": "Alice", "Value": 100},
-            {"Name": "Bob", "Value": 200},
-            {"Name": "Charlie", "Value": 50},
-            {"Name": "Alice", "Value": 25},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Alice", "Value": 100},
+                {"Name": "Bob", "Value": 200},
+                {"Name": "Charlie", "Value": 50},
+                {"Name": "Alice", "Value": 25},
+            ]
+        )
         wait_for_api()
 
         # Read with complex formula
@@ -238,11 +246,13 @@ class TestReadWithFilters:
         table_name, _ = test_table
         table = airtable_api.table(base_id, table_name)
 
-        table.batch_create([
-            {"Name": "Alice", "Value": 1},
-            {"Name": "Bob", "Value": 2},
-            {"Name": "Alice", "Value": 3},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Alice", "Value": 1},
+                {"Name": "Bob", "Value": 2},
+                {"Name": "Alice", "Value": 3},
+            ]
+        )
         wait_for_api()
 
         df = read_airtable(

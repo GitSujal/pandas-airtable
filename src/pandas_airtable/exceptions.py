@@ -84,9 +84,7 @@ class AirtableBatchError(PandasAirtableError):
 class AirtableDuplicateKeyError(PandasAirtableError):
     """Raised when duplicate keys are found in upsert mode."""
 
-    def __init__(
-        self, message: str, duplicate_values: list[Any] | None = None
-    ) -> None:
+    def __init__(self, message: str, duplicate_values: list[Any] | None = None) -> None:
         super().__init__(message)
         self.duplicate_values = duplicate_values or []
 

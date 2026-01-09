@@ -27,10 +27,12 @@ class TestSchemaTypeMapping:
         """Test string columns map to singleLineText."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Alice", "Bob", "Charlie"],
-            "Value": [1, 2, 3],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice", "Bob", "Charlie"],
+                "Value": [1, 2, 3],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -54,10 +56,12 @@ class TestSchemaTypeMapping:
         """Test integer columns map to number."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Test"],
-            "Value": [12345],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Test"],
+                "Value": [12345],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -96,11 +100,13 @@ class TestSchemaTypeMapping:
         except Exception:
             pass
 
-        df = pd.DataFrame({
-            "Name": ["Test"],
-            "Value": [0],
-            "FloatValue": [3.14159],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Test"],
+                "Value": [0],
+                "FloatValue": [3.14159],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -134,11 +140,13 @@ class TestSchemaTypeMapping:
         except Exception:
             pass
 
-        df = pd.DataFrame({
-            "Name": ["Alice", "Bob"],
-            "Value": [1, 2],
-            "Active": [True, False],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice", "Bob"],
+                "Value": [1, 2],
+                "Active": [True, False],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -176,11 +184,13 @@ class TestSchemaTypeMapping:
         except Exception:
             pass
 
-        df = pd.DataFrame({
-            "Name": ["Event1", "Event2"],
-            "Value": [1, 2],
-            "CreatedDate": pd.to_datetime(["2024-01-15", "2024-06-20"]),
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Event1", "Event2"],
+                "Value": [1, 2],
+                "CreatedDate": pd.to_datetime(["2024-01-15", "2024-06-20"]),
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -208,11 +218,13 @@ class TestSchemaEvolution:
         """Test that extra columns raise error when allow_new_columns=False."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Test"],
-            "Value": [1],
-            "ExtraColumn": ["extra"],  # Not in table schema
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Test"],
+                "Value": [1],
+                "ExtraColumn": ["extra"],  # Not in table schema
+            }
+        )
 
         with pytest.raises(AirtableSchemaError) as exc_info:
             df.airtable.to_airtable(
@@ -234,11 +246,13 @@ class TestSchemaEvolution:
         """Test that allow_new_columns=True creates missing fields."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Test1", "Test2"],
-            "Value": [100, 200],
-            "NewField": ["new1", "new2"],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Test1", "Test2"],
+                "Value": [100, 200],
+                "NewField": ["new1", "new2"],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -271,11 +285,13 @@ class TestSchemaEvolution:
         wait_for_api()
 
         # Add new data with extra column
-        df = pd.DataFrame({
-            "Name": ["New"],
-            "Value": [100],
-            "ExtraField": ["extra"],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["New"],
+                "Value": [100],
+                "ExtraField": ["extra"],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -387,9 +403,11 @@ class TestSchemaOverride:
         """Test that schema override changes inferred type."""
         created_tables.append(unique_table_name)
 
-        df = pd.DataFrame({
-            "description": ["Line 1\nLine 2", "More\nText"],
-        })
+        df = pd.DataFrame(
+            {
+                "description": ["Line 1\nLine 2", "More\nText"],
+            }
+        )
 
         # Override to use multilineText instead of singleLineText
         result = df.airtable.to_airtable(
@@ -420,10 +438,12 @@ class TestRoundTrip:
         """Test write then read preserves basic data types."""
         table_name, _ = test_table
 
-        df_original = pd.DataFrame({
-            "Name": ["Alice", "Bob", "Charlie"],
-            "Value": [100, 200, 300],
-        })
+        df_original = pd.DataFrame(
+            {
+                "Name": ["Alice", "Bob", "Charlie"],
+                "Value": [100, 200, 300],
+            }
+        )
 
         # Write
         df_original.airtable.to_airtable(base_id, table_name, api_key)
@@ -446,10 +466,12 @@ class TestRoundTrip:
         """Test that _airtable_id is preserved through round-trip."""
         table_name, _ = test_table
 
-        df = pd.DataFrame({
-            "Name": ["Test1", "Test2"],
-            "Value": [1, 2],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Test1", "Test2"],
+                "Value": [1, 2],
+            }
+        )
 
         # Write and get IDs
         result = df.airtable.to_airtable(base_id, table_name, api_key)

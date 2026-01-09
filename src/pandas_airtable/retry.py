@@ -100,10 +100,7 @@ class RateLimitedExecutor:
                 time.sleep(wait_time)
                 # Clean up again after waiting
                 now = time.time()
-                while (
-                    self.request_times
-                    and now - self.request_times[0] > self._window_size
-                ):
+                while self.request_times and now - self.request_times[0] > self._window_size:
                     self.request_times.popleft()
 
         # Record this request

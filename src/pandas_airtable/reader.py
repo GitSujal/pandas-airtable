@@ -163,7 +163,9 @@ def _normalize_fields(fields: dict[str, Any]) -> dict[str, Any]:
                     result[field_name] = normalize_attachments(value)
                 else:
                     # Likely linked records - just keep as list of IDs
-                    result[field_name] = [v.get("id", v) if isinstance(v, dict) else v for v in value]
+                    result[field_name] = [
+                        v.get("id", v) if isinstance(v, dict) else v for v in value
+                    ]
             elif isinstance(value[0], str):
                 # Multiple select or linked record IDs
                 result[field_name] = value
