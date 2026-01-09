@@ -30,6 +30,7 @@ def read_airtable(
     formula: str | None = None,
     page_size: int = DEFAULT_PAGE_SIZE,
     base_name: str | None = None,
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Read an Airtable table into a pandas DataFrame.
 
@@ -49,6 +50,7 @@ def read_airtable(
             will be looked up automatically. Note: If there are multiple bases
             with the same name, only the first one will be used. In such cases,
             use base_id instead of base_name to avoid ambiguity.
+        **kwargs: Additional keyword arguments passed to pyairtable's table.all().
 
     Returns:
         DataFrame containing all records with columns:
@@ -103,6 +105,8 @@ def read_airtable(
         query_params["view"] = view
     if formula:
         query_params["formula"] = formula
+    # add kwargs to query_params
+    query_params.update(kwargs)
 
     # Fetch all records (pyairtable handles pagination internally)
     try:
