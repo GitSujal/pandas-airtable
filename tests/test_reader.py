@@ -41,7 +41,7 @@ class TestReadAirtableBasic:
             mock_table.all.return_value = sample_airtable_records
             MockApi.return_value.table.return_value = mock_table
 
-            df = read_airtable("app123", "TestTable", api_key="pat123", view="MyView")
+            read_airtable("app123", "TestTable", api_key="pat123", view="MyView")
 
             mock_table.all.assert_called_once()
             call_kwargs = mock_table.all.call_args[1]
@@ -54,7 +54,7 @@ class TestReadAirtableBasic:
             mock_table.all.return_value = sample_airtable_records
             MockApi.return_value.table.return_value = mock_table
 
-            df = read_airtable(
+            read_airtable(
                 "app123", "TestTable", api_key="pat123", formula="{age} > 25"
             )
 

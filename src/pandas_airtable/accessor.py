@@ -347,9 +347,11 @@ def _sync_schema(
 
         # Create missing fields if allowed
         if comparison.fields_to_create and allow_new_columns:
+            # Get the Table object to use create_field method
+            table = api.table(base_id, table_name)
             for field_def in comparison.fields_to_create:
                 try:
-                    table_schema.create_field(
+                    table.create_field(
                         name=field_def["name"],
                         field_type=field_def["type"],
                     )

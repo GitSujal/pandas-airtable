@@ -39,9 +39,8 @@ class TestRetryWithBackoff:
         """Test max retries exceeded raises error."""
         mock_func = Mock(side_effect=Exception("always fail"))
 
-        with patch("pandas_airtable.retry.time.sleep"):
-            with pytest.raises(AirtableRateLimitError) as exc_info:
-                retry_with_backoff(mock_func, max_retries=3, base_delay=0.1)
+        with patch("pandas_airtable.retry.time.sleep"), pytest.raises(AirtableRateLimitError) as exc_info:
+            retry_with_backoff(mock_func, max_retries=3, base_delay=0.1)
 
         assert exc_info.value.retries == 3
 
@@ -139,10 +138,8 @@ class TestRateLimitedExecutor:
         mock_func = Mock(return_value="result")
 
         # Make calls that should exceed the limit
-        start = time.time()
         for _ in range(4):
             executor.execute(mock_func)
-        elapsed = time.time() - start
 
         # Should have been rate limited (at least some waiting)
         # With qps=2, 4 calls need at least 1 second window

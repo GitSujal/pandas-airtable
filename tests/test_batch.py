@@ -309,10 +309,10 @@ class TestExecuteBatchUpsert:
         """Test upsert handles creates and updates."""
         mock_table = Mock()
 
-        # Mock upsert result
+        # Mock upsert result - records are dicts with "id" and "fields"
         mock_result = Mock()
-        mock_result.created_records = ["rec_new"]
-        mock_result.updated_records = ["rec_existing"]
+        mock_result.created_records = [{"id": "rec_new", "fields": {"key": 1}}]
+        mock_result.updated_records = [{"id": "rec_existing", "fields": {"key": 2}}]
         mock_table.batch_upsert.return_value = mock_result
 
         records = [{"fields": {"key": 1, "value": "a"}}]

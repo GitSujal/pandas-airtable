@@ -6,22 +6,20 @@ import random
 import time
 from collections import deque
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any
 
 from pandas_airtable.exceptions import AirtableRateLimitError
 from pandas_airtable.types import RATE_LIMIT_QPS
 from pandas_airtable.utils import log_retry
 
-T = TypeVar("T")
 
-
-def retry_with_backoff(
+def retry_with_backoff[T](
     func: Callable[..., T],
     *args: Any,
     max_retries: int = 5,
     base_delay: float = 1.0,
     max_delay: float = 60.0,
-    retryable_exceptions: tuple = (Exception,),
+    retryable_exceptions: tuple[type[Exception], ...] = (Exception,),
     **kwargs: Any,
 ) -> T:
     """Execute a function with exponential backoff retry logic.
@@ -111,7 +109,7 @@ class RateLimitedExecutor:
         # Record this request
         self.request_times.append(time.time())
 
-    def execute(self, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    def execute[T](self, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         """Execute a function with rate limiting.
 
         Args:

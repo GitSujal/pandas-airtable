@@ -262,15 +262,13 @@ def execute_batch_upsert(
             fields_list = [r["fields"] for r in batch]
             result = table.batch_upsert(fields_list, key_fields=key_fields, replace=False)
 
-            # Handle pyairtable's upsert result structure
-            if hasattr(result, "created_records"):
-                created_ids.extend(result.created_records)
-            if hasattr(result, "updated_records"):
-                updated_ids.extend(result.updated_records)
-            # Also handle dict-style response
-            if isinstance(result, dict):
-                created_ids.extend(result.get("createdRecords", []))
-                updated_ids.extend(result.get("updatedRecords", []))
+            # pyairtable's batch_upsert returns UpsertResultModel with:
+            # - created_records: list of RecordDict (dicts with "id" and "fields")
+            # - updated_records: list of RecordDict (dicts with "id" and "fields")
+            if hasattr(result, "created_records") and result.created_records:
+                created_ids.extend(r["id"] for r in result.created_records)
+            if hasattr(result, "updated_records") and result.updated_records:
+                updated_ids.extend(r["id"] for r in result.updated_records)
         except Exception as e:
             errors.append(BatchError(batch=batch, error=e))
 

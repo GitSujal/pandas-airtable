@@ -183,7 +183,7 @@ class TestToAirtableUpsert:
 
             # Mock upsert result
             mock_result = Mock()
-            mock_result.created_records = ["rec1"]
+            mock_result.created_records = [{"id": "rec1", "fields": {}}]
             mock_result.updated_records = []
             mock_table.batch_upsert.return_value = mock_result
             MockApi.return_value.table.return_value = mock_table
@@ -204,7 +204,7 @@ class TestToAirtableUpsert:
             mock_base.schema.return_value = mock_schema
             MockApi.return_value.base.return_value = mock_base
 
-            result = df.airtable.to_airtable(
+            df.airtable.to_airtable(
                 "app123",
                 "TestTable",
                 api_key="pat123",
@@ -224,9 +224,8 @@ class TestToAirtableDuplicateKeys:
         """Test duplicate keys raise error by default."""
         df = pd.DataFrame({"email": ["a@b.com", "a@b.com"], "name": ["Alice", "Alice2"]})
 
-        with patch("pandas_airtable.accessor.Api"):
-            with pytest.raises(AirtableDuplicateKeyError):
-                df.airtable.to_airtable(
+        with patch("pandas_airtable.accessor.Api"), pytest.raises(AirtableDuplicateKeyError):
+            df.airtable.to_airtable(
                     "app123",
                     "TestTable",
                     api_key="pat123",
@@ -245,7 +244,7 @@ class TestToAirtableDuplicateKeys:
             mock_table.all.return_value = []
 
             mock_result = Mock()
-            mock_result.created_records = ["rec1"]
+            mock_result.created_records = [{"id": "rec1", "fields": {}}]
             mock_result.updated_records = []
             mock_table.batch_upsert.return_value = mock_result
             MockApi.return_value.table.return_value = mock_table
@@ -309,7 +308,7 @@ class TestToAirtableTableCreation:
             mock_table.batch_create.return_value = [{"id": "rec1", "fields": {}}]
             MockApi.return_value.table.return_value = mock_table
 
-            result = df.airtable.to_airtable(
+            df.airtable.to_airtable(
                 "app123", "TestTable", api_key="pat123", create_table=True
             )
 
@@ -347,6 +346,7 @@ class TestToAirtableSchemaHandling:
             mock_table = Mock()
             mock_table.all.return_value = []
             mock_table.batch_create.return_value = [{"id": "rec1", "fields": {}}]
+            mock_table.create_field = Mock()  # create_field is on Table, not TableSchema
             MockApi.return_value.table.return_value = mock_table
 
             # Mock base schema - table exists but missing new_field
@@ -358,22 +358,17 @@ class TestToAirtableSchemaHandling:
             mock_field.name = "name"
             mock_field.type = "singleLineText"
             mock_table_schema.fields = [mock_field]
-            mock_table_schema.create_field = Mock()
             mock_schema.tables = [mock_table_schema]
 
-            def table_lookup(name):
-                return mock_table_schema
-
-            mock_schema.table = table_lookup
             mock_base.schema.return_value = mock_schema
             MockApi.return_value.base.return_value = mock_base
 
-            result = df.airtable.to_airtable(
+            df.airtable.to_airtable(
                 "app123", "TestTable", api_key="pat123", allow_new_columns=True
             )
 
-            # Should have created the new field
-            mock_table_schema.create_field.assert_called()
+            # Should have created the new field via Table.create_field()
+            mock_table.create_field.assert_called()
 
     def test_schema_mismatch_raises_error(self):
         """Test schema mismatch raises error when allow_new_columns=False."""

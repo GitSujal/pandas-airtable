@@ -47,11 +47,9 @@ def infer_airtable_schema(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
         field_type = _infer_field_type(df[col], dtype)
         schema[col] = {"type": field_type}
 
-        # Add options for specific types
-        if field_type == FIELD_TYPE_NUMBER:
-            # Check if we need decimal precision
-            if pd.api.types.is_float_dtype(dtype):
-                schema[col]["options"] = {"precision": 8}
+        # Add options for number types that need decimal precision
+        if field_type == FIELD_TYPE_NUMBER and pd.api.types.is_float_dtype(dtype):
+            schema[col]["options"] = {"precision": 8}
 
     return schema
 
