@@ -78,3 +78,10 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+  publish:
+    name: Publish to PyPI
+    needs: release
+    uses: ./.github/workflows/publish.yml
+    permissions:
+      id-token: write  # Required for trusted publishing
