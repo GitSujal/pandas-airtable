@@ -16,6 +16,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    environment: prod
     permissions:
       contents: write  # Required for creating tags and releases
 
