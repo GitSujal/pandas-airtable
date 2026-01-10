@@ -5,6 +5,7 @@ Tests writing data to Airtable with append, replace, and upsert modes.
 
 from __future__ import annotations
 
+import contextlib
 import warnings
 
 import pandas as pd
@@ -340,7 +341,7 @@ class TestWriteUpsertMode:
     ):
         """Test upsert with composite key (list of fields) creates new records."""
         table_name, _ = test_table
-        table = airtable_api.table(base_id, table_name)
+        airtable_api.table(base_id, table_name)
 
         # Create fields for composite key
         base = airtable_api.base(base_id)
@@ -354,24 +355,22 @@ class TestWriteUpsertMode:
             if table_id:
                 table_meta = airtable_api.table(base_id, table_id)
                 # Try to create fields (may already exist)
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("FirstName", "singleLineText")
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("LastName", "singleLineText")
-                except Exception:
-                    pass
                 wait_for_api()
         except Exception:
             pass
 
-        df = pd.DataFrame({
-            "Name": ["Alice Smith", "Alice Jones", "Bob Smith"],
-            "FirstName": ["Alice", "Alice", "Bob"],
-            "LastName": ["Smith", "Jones", "Smith"],
-            "Value": [100, 200, 300],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice Smith", "Alice Jones", "Bob Smith"],
+                "FirstName": ["Alice", "Alice", "Bob"],
+                "LastName": ["Smith", "Jones", "Smith"],
+                "Value": [100, 200, 300],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -412,32 +411,32 @@ class TestWriteUpsertMode:
                     break
             if table_id:
                 table_meta = airtable_api.table(base_id, table_id)
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("FirstName", "singleLineText")
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("LastName", "singleLineText")
-                except Exception:
-                    pass
                 wait_for_api()
         except Exception:
             pass
 
         # Create initial records with composite key
-        table.batch_create([
-            {"Name": "Alice Smith", "FirstName": "Alice", "LastName": "Smith", "Value": 50},
-            {"Name": "Bob Jones", "FirstName": "Bob", "LastName": "Jones", "Value": 60},
-        ])
+        table.batch_create(
+            [
+                {"Name": "Alice Smith", "FirstName": "Alice", "LastName": "Smith", "Value": 50},
+                {"Name": "Bob Jones", "FirstName": "Bob", "LastName": "Jones", "Value": 60},
+            ]
+        )
         wait_for_api()
 
         # Upsert: update one (Alice Smith), create one (Alice Jones)
-        df = pd.DataFrame({
-            "Name": ["Alice Smith Updated", "Alice Jones"],
-            "FirstName": ["Alice", "Alice"],
-            "LastName": ["Smith", "Jones"],
-            "Value": [100, 200],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["Alice Smith Updated", "Alice Jones"],
+                "FirstName": ["Alice", "Alice"],
+                "LastName": ["Smith", "Jones"],
+                "Value": [100, 200],
+            }
+        )
 
         result = df.airtable.to_airtable(
             base_id,
@@ -456,24 +455,18 @@ class TestWriteUpsertMode:
         assert len(df_read) == 3
 
         # Check Alice Smith was updated
-        alice_smith = df_read[
-            (df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Smith")
-        ]
+        alice_smith = df_read[(df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Smith")]
         assert len(alice_smith) == 1
         assert alice_smith.iloc[0]["Value"] == 100
         assert "Updated" in alice_smith.iloc[0]["Name"]
 
         # Check Bob Jones is unchanged
-        bob_jones = df_read[
-            (df_read["FirstName"] == "Bob") & (df_read["LastName"] == "Jones")
-        ]
+        bob_jones = df_read[(df_read["FirstName"] == "Bob") & (df_read["LastName"] == "Jones")]
         assert len(bob_jones) == 1
         assert bob_jones.iloc[0]["Value"] == 60
 
         # Check Alice Jones was created
-        alice_jones = df_read[
-            (df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Jones")
-        ]
+        alice_jones = df_read[(df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Jones")]
         assert len(alice_jones) == 1
         assert alice_jones.iloc[0]["Value"] == 200
 
@@ -583,25 +576,23 @@ class TestWriteDuplicateKeyHandling:
                     break
             if table_id:
                 table_meta = airtable_api.table(base_id, table_id)
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("FirstName", "singleLineText")
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("LastName", "singleLineText")
-                except Exception:
-                    pass
                 wait_for_api()
         except Exception:
             pass
 
         # DataFrame with duplicate composite keys
-        df = pd.DataFrame({
-            "Name": ["First Alice", "Second Alice", "Bob"],
-            "FirstName": ["Alice", "Alice", "Bob"],
-            "LastName": ["Smith", "Smith", "Jones"],  # Duplicate: Alice Smith appears twice
-            "Value": [100, 200, 300],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["First Alice", "Second Alice", "Bob"],
+                "FirstName": ["Alice", "Alice", "Bob"],
+                "LastName": ["Smith", "Smith", "Jones"],  # Duplicate: Alice Smith appears twice
+                "Value": [100, 200, 300],
+            }
+        )
 
         with pytest.raises(AirtableDuplicateKeyError) as exc_info:
             df.airtable.to_airtable(
@@ -635,25 +626,23 @@ class TestWriteDuplicateKeyHandling:
                     break
             if table_id:
                 table_meta = airtable_api.table(base_id, table_id)
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("FirstName", "singleLineText")
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     table_meta.create_field("LastName", "singleLineText")
-                except Exception:
-                    pass
                 wait_for_api()
         except Exception:
             pass
 
         # DataFrame with duplicate composite keys
-        df = pd.DataFrame({
-            "Name": ["First Alice", "Second Alice", "Bob"],
-            "FirstName": ["Alice", "Alice", "Bob"],
-            "LastName": ["Smith", "Smith", "Jones"],  # Duplicate: Alice Smith appears twice
-            "Value": [100, 200, 300],
-        })
+        df = pd.DataFrame(
+            {
+                "Name": ["First Alice", "Second Alice", "Bob"],
+                "FirstName": ["Alice", "Alice", "Bob"],
+                "LastName": ["Smith", "Smith", "Jones"],  # Duplicate: Alice Smith appears twice
+                "Value": [100, 200, 300],
+            }
+        )
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
@@ -678,9 +667,7 @@ class TestWriteDuplicateKeyHandling:
         assert len(df_read) == 2
 
         # Check that we kept the "Second Alice" (last occurrence)
-        alice_smith = df_read[
-            (df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Smith")
-        ]
+        alice_smith = df_read[(df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Smith")]
         assert len(alice_smith) == 1
         assert alice_smith.iloc[0]["Name"] == "Second Alice"
         assert alice_smith.iloc[0]["Value"] == 200

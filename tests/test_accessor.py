@@ -230,11 +230,9 @@ class TestToAirtableUpsert:
 
     def test_upsert_with_key_field_list(self):
         """Test upsert uses list of key_fields for matching."""
-        df = pd.DataFrame({
-            "first_name": ["Alice"], 
-            "last_name": ["Smith"],
-            "email": ["alice@example.com"]
-        })
+        df = pd.DataFrame(
+            {"first_name": ["Alice"], "last_name": ["Smith"], "email": ["alice@example.com"]}
+        )
 
         with patch("pandas_airtable.accessor.Api") as MockApi:
             mock_table = Mock()
@@ -252,19 +250,19 @@ class TestToAirtableUpsert:
             mock_schema = Mock()
             mock_table_schema = Mock()
             mock_table_schema.name = "TestTable"
-            
+
             mock_field_first = Mock()
             mock_field_first.name = "first_name"
             mock_field_first.type = "singleLineText"
-            
+
             mock_field_last = Mock()
             mock_field_last.name = "last_name"
             mock_field_last.type = "singleLineText"
-            
+
             mock_field_email = Mock()
             mock_field_email.name = "email"
             mock_field_email.type = "email"
-            
+
             mock_table_schema.fields = [mock_field_first, mock_field_last, mock_field_email]
             mock_schema.tables = [mock_table_schema]
             mock_base.schema.return_value = mock_schema

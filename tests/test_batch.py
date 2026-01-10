@@ -105,11 +105,13 @@ class TestCheckDuplicateKeys:
 
     def test_no_duplicates_with_list_key_fields(self):
         """Test DataFrame without duplicates passes with composite keys."""
-        df = pd.DataFrame({
-            "first_name": ["Alice", "Alice", "Bob"],
-            "last_name": ["Smith", "Jones", "Smith"],
-            "value": ["a", "b", "c"]
-        })
+        df = pd.DataFrame(
+            {
+                "first_name": ["Alice", "Alice", "Bob"],
+                "last_name": ["Smith", "Jones", "Smith"],
+                "value": ["a", "b", "c"],
+            }
+        )
 
         result = check_duplicate_keys(df, ["first_name", "last_name"], allow_duplicates=False)
 
@@ -117,11 +119,13 @@ class TestCheckDuplicateKeys:
 
     def test_duplicates_with_list_key_fields_raises_error(self):
         """Test duplicate composite keys raise error when not allowed."""
-        df = pd.DataFrame({
-            "first_name": ["Alice", "Bob", "Alice"],
-            "last_name": ["Smith", "Jones", "Smith"],
-            "value": ["first", "b", "duplicate"]
-        })
+        df = pd.DataFrame(
+            {
+                "first_name": ["Alice", "Bob", "Alice"],
+                "last_name": ["Smith", "Jones", "Smith"],
+                "value": ["first", "b", "duplicate"],
+            }
+        )
 
         with pytest.raises(AirtableDuplicateKeyError) as exc_info:
             check_duplicate_keys(df, ["first_name", "last_name"], allow_duplicates=False)
@@ -131,11 +135,13 @@ class TestCheckDuplicateKeys:
 
     def test_duplicates_with_list_key_fields_keeps_last(self):
         """Test allow_duplicates=True keeps last occurrence with composite keys."""
-        df = pd.DataFrame({
-            "first_name": ["Alice", "Bob", "Alice"],
-            "last_name": ["Smith", "Jones", "Smith"],
-            "value": ["first", "b", "last"]
-        })
+        df = pd.DataFrame(
+            {
+                "first_name": ["Alice", "Bob", "Alice"],
+                "last_name": ["Smith", "Jones", "Smith"],
+                "value": ["first", "b", "last"],
+            }
+        )
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

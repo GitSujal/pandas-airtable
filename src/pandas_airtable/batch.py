@@ -20,7 +20,9 @@ from pandas_airtable.types import (
 from pandas_airtable.utils import chunk_records, log_batch_operation
 
 
-def check_duplicate_keys(df: pd.DataFrame, key_field: str | list[str], allow_duplicates: bool) -> pd.DataFrame:
+def check_duplicate_keys(
+    df: pd.DataFrame, key_field: str | list[str], allow_duplicates: bool
+) -> pd.DataFrame:
     """Check for duplicate keys in DataFrame.
 
     If allow_duplicates=False and duplicates exist, raise AirtableDuplicateKeyError.
@@ -39,7 +41,7 @@ def check_duplicate_keys(df: pd.DataFrame, key_field: str | list[str], allow_dup
     """
     # Normalize to list for processing
     key_fields = [key_field] if isinstance(key_field, str) else key_field
-    
+
     duplicates = df[df.duplicated(subset=key_fields, keep=False)]
 
     if len(duplicates) > 0:
