@@ -331,6 +331,152 @@ class TestWriteUpsertMode:
         existing2 = df_read[df_read["Name"] == "Existing2"].iloc[0]
         assert existing2["Value"] == 20
 
+    def test_upsert_with_list_key_fields_creates_new(
+        self,
+        api_key: str,
+        base_id: str,
+        test_table: tuple[str, str],
+        airtable_api: Api,
+    ):
+        """Test upsert with composite key (list of fields) creates new records."""
+        table_name, _ = test_table
+        table = airtable_api.table(base_id, table_name)
+
+        # Create fields for composite key
+        base = airtable_api.base(base_id)
+        try:
+            base_schema = base.schema()
+            table_id = None
+            for t in base_schema.tables:
+                if t.name == table_name:
+                    table_id = t.id
+                    break
+            if table_id:
+                table_meta = airtable_api.table(base_id, table_id)
+                # Try to create fields (may already exist)
+                try:
+                    table_meta.create_field("FirstName", "singleLineText")
+                except Exception:
+                    pass
+                try:
+                    table_meta.create_field("LastName", "singleLineText")
+                except Exception:
+                    pass
+                wait_for_api()
+        except Exception:
+            pass
+
+        df = pd.DataFrame({
+            "Name": ["Alice Smith", "Alice Jones", "Bob Smith"],
+            "FirstName": ["Alice", "Alice", "Bob"],
+            "LastName": ["Smith", "Jones", "Smith"],
+            "Value": [100, 200, 300],
+        })
+
+        result = df.airtable.to_airtable(
+            base_id,
+            table_name,
+            api_key,
+            if_exists="upsert",
+            key_field=["FirstName", "LastName"],  # Composite key
+        )
+
+        assert result.success
+        # All should be created (composite keys are unique)
+        assert result.created_count + result.updated_count == 3
+
+        # Verify data was written correctly
+        wait_for_api()
+        df_read = read_airtable(base_id, table_name, api_key)
+        assert len(df_read) == 3
+
+    def test_upsert_with_list_key_fields_updates_existing(
+        self,
+        api_key: str,
+        base_id: str,
+        test_table: tuple[str, str],
+        airtable_api: Api,
+    ):
+        """Test upsert with composite key updates existing records correctly."""
+        table_name, _ = test_table
+        table = airtable_api.table(base_id, table_name)
+
+        # Create fields for composite key
+        base = airtable_api.base(base_id)
+        try:
+            base_schema = base.schema()
+            table_id = None
+            for t in base_schema.tables:
+                if t.name == table_name:
+                    table_id = t.id
+                    break
+            if table_id:
+                table_meta = airtable_api.table(base_id, table_id)
+                try:
+                    table_meta.create_field("FirstName", "singleLineText")
+                except Exception:
+                    pass
+                try:
+                    table_meta.create_field("LastName", "singleLineText")
+                except Exception:
+                    pass
+                wait_for_api()
+        except Exception:
+            pass
+
+        # Create initial records with composite key
+        table.batch_create([
+            {"Name": "Alice Smith", "FirstName": "Alice", "LastName": "Smith", "Value": 50},
+            {"Name": "Bob Jones", "FirstName": "Bob", "LastName": "Jones", "Value": 60},
+        ])
+        wait_for_api()
+
+        # Upsert: update one (Alice Smith), create one (Alice Jones)
+        df = pd.DataFrame({
+            "Name": ["Alice Smith Updated", "Alice Jones"],
+            "FirstName": ["Alice", "Alice"],
+            "LastName": ["Smith", "Jones"],
+            "Value": [100, 200],
+        })
+
+        result = df.airtable.to_airtable(
+            base_id,
+            table_name,
+            api_key,
+            if_exists="upsert",
+            key_field=["FirstName", "LastName"],  # Composite key
+        )
+
+        assert result.success
+
+        # Verify results
+        wait_for_api()
+        df_read = read_airtable(base_id, table_name, api_key)
+        # Should have 3 records: Alice Smith (updated), Bob Jones (unchanged), Alice Jones (new)
+        assert len(df_read) == 3
+
+        # Check Alice Smith was updated
+        alice_smith = df_read[
+            (df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Smith")
+        ]
+        assert len(alice_smith) == 1
+        assert alice_smith.iloc[0]["Value"] == 100
+        assert "Updated" in alice_smith.iloc[0]["Name"]
+
+        # Check Bob Jones is unchanged
+        bob_jones = df_read[
+            (df_read["FirstName"] == "Bob") & (df_read["LastName"] == "Jones")
+        ]
+        assert len(bob_jones) == 1
+        assert bob_jones.iloc[0]["Value"] == 60
+
+        # Check Alice Jones was created
+        alice_jones = df_read[
+            (df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Jones")
+        ]
+        assert len(alice_jones) == 1
+        assert alice_jones.iloc[0]["Value"] == 200
+
 
 class TestWriteDuplicateKeyHandling:
     """Test handling of duplicate keys in upsert mode."""
@@ -415,6 +561,129 @@ class TestWriteDuplicateKeyHandling:
         # Should have the last occurrence values
         a_record = df_read[df_read["Name"] == "Second"]
         assert len(a_record) == 1
+
+    def test_duplicate_composite_keys_raises_error(
+        self,
+        api_key: str,
+        base_id: str,
+        test_table: tuple[str, str],
+        airtable_api: Api,
+    ):
+        """Test that duplicate composite keys raise error when not allowed."""
+        table_name, _ = test_table
+
+        # Create fields for composite key
+        base = airtable_api.base(base_id)
+        try:
+            base_schema = base.schema()
+            table_id = None
+            for t in base_schema.tables:
+                if t.name == table_name:
+                    table_id = t.id
+                    break
+            if table_id:
+                table_meta = airtable_api.table(base_id, table_id)
+                try:
+                    table_meta.create_field("FirstName", "singleLineText")
+                except Exception:
+                    pass
+                try:
+                    table_meta.create_field("LastName", "singleLineText")
+                except Exception:
+                    pass
+                wait_for_api()
+        except Exception:
+            pass
+
+        # DataFrame with duplicate composite keys
+        df = pd.DataFrame({
+            "Name": ["First Alice", "Second Alice", "Bob"],
+            "FirstName": ["Alice", "Alice", "Bob"],
+            "LastName": ["Smith", "Smith", "Jones"],  # Duplicate: Alice Smith appears twice
+            "Value": [100, 200, 300],
+        })
+
+        with pytest.raises(AirtableDuplicateKeyError) as exc_info:
+            df.airtable.to_airtable(
+                base_id,
+                table_name,
+                api_key,
+                if_exists="upsert",
+                key_field=["FirstName", "LastName"],
+            )
+
+        assert "duplicate" in str(exc_info.value).lower()
+
+    def test_duplicate_composite_keys_allowed_keeps_last(
+        self,
+        api_key: str,
+        base_id: str,
+        test_table: tuple[str, str],
+        airtable_api: Api,
+    ):
+        """Test that allow_duplicate_keys=True keeps last occurrence for composite keys."""
+        table_name, _ = test_table
+
+        # Create fields for composite key
+        base = airtable_api.base(base_id)
+        try:
+            base_schema = base.schema()
+            table_id = None
+            for t in base_schema.tables:
+                if t.name == table_name:
+                    table_id = t.id
+                    break
+            if table_id:
+                table_meta = airtable_api.table(base_id, table_id)
+                try:
+                    table_meta.create_field("FirstName", "singleLineText")
+                except Exception:
+                    pass
+                try:
+                    table_meta.create_field("LastName", "singleLineText")
+                except Exception:
+                    pass
+                wait_for_api()
+        except Exception:
+            pass
+
+        # DataFrame with duplicate composite keys
+        df = pd.DataFrame({
+            "Name": ["First Alice", "Second Alice", "Bob"],
+            "FirstName": ["Alice", "Alice", "Bob"],
+            "LastName": ["Smith", "Smith", "Jones"],  # Duplicate: Alice Smith appears twice
+            "Value": [100, 200, 300],
+        })
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = df.airtable.to_airtable(
+                base_id,
+                table_name,
+                api_key,
+                if_exists="upsert",
+                key_field=["FirstName", "LastName"],
+                allow_duplicate_keys=True,
+            )
+
+            # Should have warning about dropped rows
+            assert len(w) >= 1
+            assert "duplicate" in str(w[0].message).lower()
+
+        assert result.success
+
+        # Verify only 2 records (Alice Smith duplicate was merged, keeping last)
+        wait_for_api()
+        df_read = read_airtable(base_id, table_name, api_key)
+        assert len(df_read) == 2
+
+        # Check that we kept the "Second Alice" (last occurrence)
+        alice_smith = df_read[
+            (df_read["FirstName"] == "Alice") & (df_read["LastName"] == "Smith")
+        ]
+        assert len(alice_smith) == 1
+        assert alice_smith.iloc[0]["Name"] == "Second Alice"
+        assert alice_smith.iloc[0]["Value"] == 200
 
 
 class TestWriteValidation:

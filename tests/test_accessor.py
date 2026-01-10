@@ -86,6 +86,19 @@ class TestToAirtableValidation:
                 key_field="nonexistent",
             )
 
+    def test_upsert_key_field_list_must_all_exist(self):
+        """Test all key_fields in list must exist in DataFrame."""
+        df = pd.DataFrame({"name": ["Alice"], "email": ["alice@example.com"]})
+
+        with pytest.raises(AirtableValidationError, match="nonexistent"):
+            df.airtable.to_airtable(
+                "app123",
+                "TestTable",
+                api_key="pat123",
+                if_exists="upsert",
+                key_field=["name", "nonexistent"],
+            )
+
     def test_batch_size_validation(self):
         """Test batch_size must be 1-10."""
         df = pd.DataFrame({"name": ["Alice"]})
@@ -214,6 +227,106 @@ class TestToAirtableUpsert:
             mock_table.batch_upsert.assert_called_once()
             call_kwargs = mock_table.batch_upsert.call_args[1]
             assert call_kwargs["key_fields"] == ["email"]
+
+    def test_upsert_with_key_field_list(self):
+        """Test upsert uses list of key_fields for matching."""
+        df = pd.DataFrame({
+            "first_name": ["Alice"], 
+            "last_name": ["Smith"],
+            "email": ["alice@example.com"]
+        })
+
+        with patch("pandas_airtable.accessor.Api") as MockApi:
+            mock_table = Mock()
+            mock_table.all.return_value = []
+
+            # Mock upsert result
+            mock_result = Mock()
+            mock_result.created_records = [{"id": "rec1", "fields": {}}]
+            mock_result.updated_records = []
+            mock_table.batch_upsert.return_value = mock_result
+            MockApi.return_value.table.return_value = mock_table
+
+            # Mock base schema check - include expected fields
+            mock_base = Mock()
+            mock_schema = Mock()
+            mock_table_schema = Mock()
+            mock_table_schema.name = "TestTable"
+            
+            mock_field_first = Mock()
+            mock_field_first.name = "first_name"
+            mock_field_first.type = "singleLineText"
+            
+            mock_field_last = Mock()
+            mock_field_last.name = "last_name"
+            mock_field_last.type = "singleLineText"
+            
+            mock_field_email = Mock()
+            mock_field_email.name = "email"
+            mock_field_email.type = "email"
+            
+            mock_table_schema.fields = [mock_field_first, mock_field_last, mock_field_email]
+            mock_schema.tables = [mock_table_schema]
+            mock_base.schema.return_value = mock_schema
+            MockApi.return_value.base.return_value = mock_base
+
+            df.airtable.to_airtable(
+                "app123",
+                "TestTable",
+                api_key="pat123",
+                if_exists="upsert",
+                key_field=["first_name", "last_name"],
+            )
+
+            mock_table.batch_upsert.assert_called_once()
+            call_kwargs = mock_table.batch_upsert.call_args[1]
+            assert call_kwargs["key_fields"] == ["first_name", "last_name"]
+
+    def test_upsert_string_key_field_converted_to_list(self):
+        """Test string key_field is converted to list before calling batch_upsert."""
+        df = pd.DataFrame({"email": ["alice@example.com"], "name": ["Alice"]})
+
+        with patch("pandas_airtable.accessor.Api") as MockApi:
+            mock_table = Mock()
+            mock_table.all.return_value = []
+
+            # Mock upsert result
+            mock_result = Mock()
+            mock_result.created_records = [{"id": "rec1", "fields": {}}]
+            mock_result.updated_records = []
+            mock_table.batch_upsert.return_value = mock_result
+            MockApi.return_value.table.return_value = mock_table
+
+            # Mock base schema check
+            mock_base = Mock()
+            mock_schema = Mock()
+            mock_table_schema = Mock()
+            mock_table_schema.name = "TestTable"
+            mock_field_email = Mock()
+            mock_field_email.name = "email"
+            mock_field_email.type = "email"
+            mock_field_name = Mock()
+            mock_field_name.name = "name"
+            mock_field_name.type = "singleLineText"
+            mock_table_schema.fields = [mock_field_email, mock_field_name]
+            mock_schema.tables = [mock_table_schema]
+            mock_base.schema.return_value = mock_schema
+            MockApi.return_value.base.return_value = mock_base
+
+            # Pass string key_field
+            df.airtable.to_airtable(
+                "app123",
+                "TestTable",
+                api_key="pat123",
+                if_exists="upsert",
+                key_field="email",  # String, not list
+            )
+
+            mock_table.batch_upsert.assert_called_once()
+            call_kwargs = mock_table.batch_upsert.call_args[1]
+            # Verify it was converted to list
+            assert call_kwargs["key_fields"] == ["email"]
+            assert isinstance(call_kwargs["key_fields"], list)
 
 
 class TestToAirtableDuplicateKeys:

@@ -71,7 +71,7 @@ class AirtableAccessor:
         table_name: str | None = None,
         api_key: str | None = None,
         if_exists: IfExistsMode = "append",
-        key_field: str | None = None,
+        key_field: str | list[str] | None = None,
         schema: dict[str, dict[str, Any]] | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         create_table: bool = True,
@@ -91,7 +91,8 @@ class AirtableAccessor:
                 - "append": Add new records (default)
                 - "replace": Delete all existing records, then add new
                 - "upsert": Update existing records by key, create new ones
-            key_field: Field name used for upsert matching (required if if_exists="upsert").
+            key_field: Field name(s) used for upsert matching (required if if_exists="upsert").
+                Can be a string (single field) or list of strings (multiple fields).
             schema: Optional schema override. Dict mapping field names to
                 {"type": "...", "options": {...}}.
             batch_size: Records per API batch (default 10, max 10).
@@ -186,7 +187,9 @@ class AirtableAccessor:
         elif if_exists == "upsert":
             if not key_field:
                 raise AirtableValidationError("key_field is required for upsert operation")
-            return execute_batch_upsert(table, records, [key_field], batch_size)
+            # Convert string to list if needed
+            key_fields = [key_field] if isinstance(key_field, str) else key_field
+            return execute_batch_upsert(table, records, key_fields, batch_size)
         else:
             raise AirtableValidationError(f"Invalid if_exists value: {if_exists}")
 
@@ -196,7 +199,7 @@ def _validate_write_inputs(
     table_name: str,
     api_key: str,
     if_exists: str,
-    key_field: str | None,
+    key_field: str | list[str] | None,
     batch_size: int,
     df: pd.DataFrame,
 ) -> None:
@@ -230,11 +233,14 @@ def _validate_write_inputs(
             raise AirtableValidationError(
                 "if_exists='upsert' requires a key_field parameter to identify records for update."
             )
-        if key_field not in df.columns:
-            raise AirtableValidationError(
-                f"key_field '{key_field}' not found in DataFrame columns. "
-                f"Available columns: {list(df.columns)}"
-            )
+        # Normalize to list for validation
+        key_fields = [key_field] if isinstance(key_field, str) else key_field
+        for kf in key_fields:
+            if kf not in df.columns:
+                raise AirtableValidationError(
+                    f"key_field '{kf}' not found in DataFrame columns. "
+                    f"Available columns: {list(df.columns)}"
+                )
 
 
 def _ensure_table_exists(

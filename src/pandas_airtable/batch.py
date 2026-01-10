@@ -20,7 +20,7 @@ from pandas_airtable.types import (
 from pandas_airtable.utils import chunk_records, log_batch_operation
 
 
-def check_duplicate_keys(df: pd.DataFrame, key_field: str, allow_duplicates: bool) -> pd.DataFrame:
+def check_duplicate_keys(df: pd.DataFrame, key_field: str | list[str], allow_duplicates: bool) -> pd.DataFrame:
     """Check for duplicate keys in DataFrame.
 
     If allow_duplicates=False and duplicates exist, raise AirtableDuplicateKeyError.
@@ -28,7 +28,7 @@ def check_duplicate_keys(df: pd.DataFrame, key_field: str, allow_duplicates: boo
 
     Args:
         df: DataFrame to check.
-        key_field: The field used as key for upsert.
+        key_field: The field(s) used as key for upsert. Can be a single string or list of strings.
         allow_duplicates: Whether to allow duplicates (keep last).
 
     Returns:
@@ -37,22 +37,31 @@ def check_duplicate_keys(df: pd.DataFrame, key_field: str, allow_duplicates: boo
     Raises:
         AirtableDuplicateKeyError: If duplicates found and not allowed.
     """
-    duplicates = df[df[key_field].duplicated(keep=False)]
+    # Normalize to list for processing
+    key_fields = [key_field] if isinstance(key_field, str) else key_field
+    
+    duplicates = df[df.duplicated(subset=key_fields, keep=False)]
 
     if len(duplicates) > 0:
-        duplicate_values = duplicates[key_field].unique().tolist()
+        # For composite keys, show combination of values
+        if len(key_fields) == 1:
+            duplicate_values = duplicates[key_fields[0]].unique().tolist()
+            key_field_str = key_fields[0]
+        else:
+            duplicate_values = duplicates[key_fields].drop_duplicates().values.tolist()
+            key_field_str = f"[{', '.join(key_fields)}]"
 
         if not allow_duplicates:
             raise AirtableDuplicateKeyError(
                 f"Found {len(duplicate_values)} duplicate values in key field "
-                f"'{key_field}': {duplicate_values[:5]}{'...' if len(duplicate_values) > 5 else ''}. "
+                f"'{key_field_str}': {duplicate_values[:5]}{'...' if len(duplicate_values) > 5 else ''}. "
                 f"Set allow_duplicate_keys=True to use last occurrence.",
                 duplicate_values=duplicate_values,
             )
         else:
             # Keep last occurrence, warn about dropped rows
             original_len = len(df)
-            df = df.drop_duplicates(subset=[key_field], keep="last")
+            df = df.drop_duplicates(subset=key_fields, keep="last")
             dropped_count = original_len - len(df)
             warnings.warn(
                 f"Dropped {dropped_count} rows with duplicate keys. "

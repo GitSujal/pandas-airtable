@@ -103,6 +103,64 @@ class TestCheckDuplicateKeys:
             assert len(w) == 1
             assert "duplicate" in str(w[0].message).lower()
 
+    def test_no_duplicates_with_list_key_fields(self):
+        """Test DataFrame without duplicates passes with composite keys."""
+        df = pd.DataFrame({
+            "first_name": ["Alice", "Alice", "Bob"],
+            "last_name": ["Smith", "Jones", "Smith"],
+            "value": ["a", "b", "c"]
+        })
+
+        result = check_duplicate_keys(df, ["first_name", "last_name"], allow_duplicates=False)
+
+        assert len(result) == 3
+
+    def test_duplicates_with_list_key_fields_raises_error(self):
+        """Test duplicate composite keys raise error when not allowed."""
+        df = pd.DataFrame({
+            "first_name": ["Alice", "Bob", "Alice"],
+            "last_name": ["Smith", "Jones", "Smith"],
+            "value": ["first", "b", "duplicate"]
+        })
+
+        with pytest.raises(AirtableDuplicateKeyError) as exc_info:
+            check_duplicate_keys(df, ["first_name", "last_name"], allow_duplicates=False)
+
+        # Check that duplicate values contains the composite key
+        assert len(exc_info.value.duplicate_values) > 0
+
+    def test_duplicates_with_list_key_fields_keeps_last(self):
+        """Test allow_duplicates=True keeps last occurrence with composite keys."""
+        df = pd.DataFrame({
+            "first_name": ["Alice", "Bob", "Alice"],
+            "last_name": ["Smith", "Jones", "Smith"],
+            "value": ["first", "b", "last"]
+        })
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = check_duplicate_keys(df, ["first_name", "last_name"], allow_duplicates=True)
+
+            assert len(result) == 2
+            # Should have kept "last" for Alice Smith
+            alice_smith = result[
+                (result["first_name"] == "Alice") & (result["last_name"] == "Smith")
+            ]
+            assert len(alice_smith) == 1
+            assert alice_smith["value"].iloc[0] == "last"
+            # Should have issued warning
+            assert len(w) == 1
+            assert "duplicate" in str(w[0].message).lower()
+
+    def test_string_key_field_converted_to_list(self):
+        """Test string key_field is handled correctly (converted to list internally)."""
+        df = pd.DataFrame({"key": [1, 2, 3], "value": ["a", "b", "c"]})
+
+        # String should work the same as before
+        result = check_duplicate_keys(df, "key", allow_duplicates=False)
+
+        assert len(result) == 3
+
 
 class TestPrepareRecords:
     """Test record preparation for API."""
